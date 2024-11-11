@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/EspHomeViewer/s31-outlet-sqlite.db
+/EspHomeViewer/s31-outlet-sqlite.db-shm
+/EspHomeViewer/s31-outlet-sqlite.db-wal
