@@ -1,0 +1,70 @@
+﻿@page "/"
+
+@using EspHomeViewer.Components.Control;
+
+<style>
+    body {
+        background-color:black;
+    }
+
+    table {
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 10px;
+        height: 100%;
+        table-layout: fixed;
+        margin-bottom: 20px
+    }
+
+    td {
+        border: 2px solid #282828;
+        text-align: center;
+        padding: 3px;
+    }
+
+    tr:nth-child(even) {
+        color: white;
+    }
+
+    tr:nth-child(odd) {
+        color: gray;
+    }
+</style>
+
+<PageTitle>S31 Data</PageTitle>
+<table>
+    @foreach (var group in EsphomeOptions.CurrentValue.StatusInfo.Where(x => x.GroupInfo != null).Select(x => x.GroupInfo))
+    {
+        <tr>
+            <td>@group.Title</td>
+            <td><TotalOutput GroupInfo="@group.Name" Unit="@group.Unit" Subscriber="subscriber" /></td>
+            @* <td>@ProcessEvent.TryGetSumValue(group.Name) @group.Unit</td> *@
+        </tr>
+    }
+</table>
+
+<table>
+    <tr>
+        <td>
+            Device
+        </td>
+        @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo.Where(x => !x.Hidden))
+        {
+            <td>@status.Name</td>
+        }
+    </tr>
+    @foreach (var device in EsphomeOptions.CurrentValue.DeviceInfo)
+    {
+        <tr>
+            <td>@device.DeviceName</td>
+            @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo.Where(x => !x.Hidden))
+            {
+               @*  var friendly = @ProcessEvent.TryGetValue(device.DeviceName, status.Name);
+                <td>@friendly?.Data @friendly?.Unit</td> *@
+                <td><SingleInput DeviceName="@device.DeviceName" Name="@status.Name" Unit="@status.Unit" Subscriber="subscriber" /></td>
+            }
+        </tr>
+    }
+</table>
+
+<button @onclick=@(() => GC.Collect())>GC.Collect()</button>
