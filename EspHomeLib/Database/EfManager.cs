@@ -32,7 +32,7 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
 
     private ConcurrentDictionary<string, RecordData> recordData = new();
 
-    private Subscriber subscriber;
+    private readonly Subscriber subscriber;
     private Task runningInstance;
 
     public EfManager(ProcessEvent processEvent, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, EfContext efContext, ILogger<SseClient> logger)
@@ -42,10 +42,10 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
         _esphomeOptionsMonitor = esphomeOptionsMonitor;
         _logger = logger;
 
+        InitOption();
+
         subscriber = _processEvent.Subscribe(this);
         subscriber.EveryRawEvent = this;
-
-        InitOption();
 
         _esphomeOptionsDispose = _esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
@@ -62,8 +62,81 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(EfManager));
 
         _esphomeOptions = _esphomeOptionsMonitor.CurrentValue;
+        InitRecordData();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(EfManager));
+    }
+
+    private void InitRecordData()
+    {
+        foreach (var device in _processEvent.DeviceInfo)
+        {
+            RowEntry rowEntry = _efContext.RowEntry.FirstOrDefault(x => x.Name == device.Key);
+
+            if (rowEntry == null)
+            {
+                rowEntry = new RowEntry()
+                {
+                    Name = device.Key,
+                    FriendlyName = device.Value.DeviceInfo.DeviceName,
+                    Unit = device.Value.StatusInfo.Unit,
+                };
+
+                _efContext.Add(rowEntry);
+            }
+            else
+            {
+                rowEntry.FriendlyName = device.Value.DeviceInfo.DeviceName;
+                rowEntry.Unit = device.Value.StatusInfo.Unit;
+            }
+
+            if (!recordData.TryGetValue(rowEntry.Name, out var data))
+            {
+                recordData[rowEntry.Name] = new()
+                {
+                    RowEntry = rowEntry,
+                    LastRecordSw = Stopwatch.StartNew(),
+                    RecordDelta = device.Value.StatusInfo.RecordDelta,
+                    RecordThrottle = device.Value.StatusInfo.RecordThrottle,
+                    GroupInfoName = device.Value.StatusInfo.GroupInfoName,
+                };
+            }
+        }
+
+        foreach (var group in _esphomeOptions.GroupInfo)
+        {
+            RowEntry rowEntry = _efContext.RowEntry.FirstOrDefault(x => x.Name == group.Id);
+
+            if (rowEntry == null)
+            {
+                rowEntry = new RowEntry()
+                {
+                    Name = group.Id,
+                    FriendlyName = group.Title,
+                    Unit = group.Unit,
+                };
+
+                _efContext.Add(rowEntry);
+            }
+            else
+            {
+                rowEntry.FriendlyName = group.Title;
+                rowEntry.Unit = group.Unit;
+            }
+
+            if (!recordData.TryGetValue(rowEntry.Name, out var data))
+            {
+                recordData[rowEntry.Name] = new()
+                {
+                    RowEntry = rowEntry,
+                    LastRecordSw = Stopwatch.StartNew(),
+                    RecordThrottle = group.RecordThrottle,
+                };
+            }
+        }
+
+        _efContext.SaveChanges();
+        _efContext.ChangeTracker.Clear();
     }
 
     public void Dispose()
@@ -110,11 +183,6 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
                     {
                         foreach (var dbItem in Queue.GetConsumingEnumerable())
                         {
-                            if (dbItem is Event json)
-                            {
-                                await GetDescIdAsync(json);
-                            }
-
                             await _efContext.AddAsync(dbItem);
                             await _efContext.SaveChangesAsync();
                             _efContext.ChangeTracker.Clear();
@@ -139,17 +207,24 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
 
     public async Task ReceiveRawDataAsync(EspEvent espEvent)
     {
+        await HandleSingleEvent(espEvent);
+        await HandleGroupEvent(espEvent);
+    }
+
+    private async Task HandleSingleEvent(EspEvent espEvent)
+    {
         var newEvent = new Event(espEvent);
 
-        recordData.TryGetValue(espEvent.Id, out var data);
+        recordData.TryGetValue(newEvent.SourceId, out var data);
+        newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
 
-        if (espEvent.Event_Type == null && data != null)
+        if (espEvent.Event_Type == null)
         {
-            if(!data.LastRecordSw.IsRunning || Math.Abs(espEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+            if (Math.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
             {
-                if (data.LastValue != espEvent.Data)
+                if (data.LastValue != newEvent.Data)
                 {
-                    data.LastValue = espEvent.Data;
+                    data.LastValue = newEvent.Data;
                     Queue.Add(newEvent);
                 }
 
@@ -164,63 +239,41 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
         await Task.CompletedTask;
     }
 
+    private async Task HandleGroupEvent(EspEvent espEvent)
+    {
+        if (_processEvent.DeviceInfo.TryGetValue(espEvent.Id, out var processOption) &&
+            processOption.GroupInfo != null)
+        {
+            var singleGroupInfo = recordData.Values.Where(x => string.Equals(x.GroupInfoName, processOption.GroupInfo.Name, StringComparison.OrdinalIgnoreCase))
+                                                   .ToList();
+
+            var newEvent = new Event()
+            {
+                SourceId = processOption.GroupInfo.Id,
+                Data = singleGroupInfo.Sum(x => x.LastValue),
+                UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+                IsGroup = true,
+            };
+
+            recordData.TryGetValue(newEvent.SourceId, out var data);
+            newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
+
+            if (data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+            {
+                Queue.Add(newEvent);
+
+                data.LastRecordSw.Restart();
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
     private async Task InsertErrorAsync(Error error)
     {
         Queue.Add(error);
 
         await Task.CompletedTask;
-    }
-
-    private async Task GetDescIdAsync(Event json)
-    {
-        //if(recordData.Count == 0)
-        //{
-        //    var entries = _efContext.RowEntry.ToList();
-
-        //    foreach (var entry in entries)
-        //    {
-        //        if (_processEvent.DeviceInfo.TryGetValue(entry.Name, out var deviceInfo))
-        //        {
-        //            NewRecordData(json, deviceInfo, entry);
-        //        }
-        //    }
-        //}
-
-        if (!recordData.TryGetValue(json.SourceId, out var data))
-        {
-            if(_processEvent.DeviceInfo.TryGetValue(json.SourceId, out var deviceInfo))
-            {
-                var rowEntry = _efContext.RowEntry.FirstOrDefault(x => x.Name == json.SourceId);
-
-                if(rowEntry == null)
-                {
-                    rowEntry = new RowEntry()
-                    {
-                        FriendlyName = deviceInfo.deviceInfo.DeviceName,
-                        Name = json.SourceId,
-                        Unit = deviceInfo.statusInfo.Unit,
-                    };
-
-                    await _efContext.AddAsync(rowEntry);
-                    await _efContext.SaveChangesAsync();
-                }
-
-                NewRecordData(json, deviceInfo, rowEntry);
-            }
-        }
-
-        json.RowEntryId = recordData[json.SourceId].RowEntry.RowEntryId.Value;
-    }
-
-    private void NewRecordData(Event json, (DeviceInfoOption deviceInfo, StatusInfoOption statusInfo) deviceInfo, RowEntry rowEntry)
-    {
-        recordData[json.SourceId] = new()
-        {
-            RowEntry = rowEntry,
-            LastRecordSw = new(),
-            RecordDelta = deviceInfo.statusInfo.RecordDelta,
-            RecordThrottle = deviceInfo.statusInfo.RecordThrottle,
-        };
     }
 
     public async Task HandleErrorAsync(Exception e, string source, string message = null)

@@ -8,4 +8,5 @@ public class EsphomeOptions
     public SseClientOption SseClient { get; set; }
     public List<DeviceInfoOption> DeviceInfo { get; set; }
     public List<StatusInfoOption> StatusInfo { get; set; }
+    public List<GroupInfoOption> GroupInfo { get; set; }
 }

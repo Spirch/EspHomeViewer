@@ -37,6 +37,7 @@ public sealed class EfContext : DbContext
              .IsRequired();
 
             x.Ignore(p => p.SourceId);
+            x.Ignore(p => p.IsGroup);
 
             x.HasOne(d => d.EspHomeId)
              .WithMany(dm => dm.Event)

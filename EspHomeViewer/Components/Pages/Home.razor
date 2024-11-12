@@ -33,7 +33,7 @@
 
 <PageTitle>S31 Data</PageTitle>
 <table>
-    @foreach (var group in EsphomeOptions.CurrentValue.StatusInfo.Where(x => x.GroupInfo != null).Select(x => x.GroupInfo))
+    @foreach (var group in EsphomeOptions.CurrentValue.GroupInfo)
     {
         <tr>
             <td>@group.Title</td>

@@ -16,4 +16,6 @@ public class RecordData
 
     public int RecordThrottle { get; set; }
     public Stopwatch LastRecordSw { get; set; }
+
+    public string GroupInfoName { get; set; }
 }

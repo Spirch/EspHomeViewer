@@ -8,8 +8,7 @@ public class StatusInfoOption
     public decimal RecordDelta { get; set; }
     public int RecordThrottle { get; set; }
     public bool Hidden { get; set; }
-
-    public GroupInfoOption GroupInfo { get; set; }
+    public string GroupInfoName { get; set; }
 
     public override string ToString()
     {

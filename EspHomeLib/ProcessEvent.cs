@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,7 +23,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
     private readonly ConcurrentDictionary<IProcessEventSubscriber, Subscriber> subscriber = new();
 
-    public FrozenDictionary<string, (DeviceInfoOption deviceInfo, StatusInfoOption statusInfo)> DeviceInfo { get; set; }
+    public FrozenDictionary<string, ProcessOption> DeviceInfo { get; set; }
 
     public ProcessEvent(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<ProcessEvent> logger)
     {
@@ -74,9 +75,13 @@ public class ProcessEvent : IProcessEvent, IDisposable
                     select new
                     {
                         key = string.Concat(statusInfo.Prefix, deviceInfo.Name, statusInfo.Suffix),
-                        deviceInfo,
-                        statusInfo
-                    }).ToFrozenDictionary(k => k.key, v => (v.deviceInfo, v.statusInfo));
+                        processOption = new ProcessOption()
+                        {
+                            DeviceInfo = deviceInfo,
+                            StatusInfo = statusInfo,
+                            GroupInfo = _esphomeOptions.GroupInfo.FirstOrDefault(x => string.Equals(statusInfo.GroupInfoName, x.Name, StringComparison.OrdinalIgnoreCase))
+                        }
+                    }).ToFrozenDictionary(k => k.key, v => v.processOption);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(ProcessEvent));
     }
@@ -117,16 +122,16 @@ public class ProcessEvent : IProcessEvent, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} Start", nameof(ProcessEvent), uri);
 
-        if (DeviceInfo.TryGetValue(espEvent.Id, out (DeviceInfoOption deviceInfo, StatusInfoOption statusInfo) info))
+        if (DeviceInfo.TryGetValue(espEvent.Id, out var processOption))
         {
-            if (!dataDisplay.TryGetValue((info.deviceInfo.DeviceName, info.statusInfo.Name), out var friendlyDisplay))
+            if (!dataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
             {
                 friendlyDisplay = new()
                 {
-                    DeviceName = info.deviceInfo.DeviceName,
-                    Name = info.statusInfo.Name,
-                    Unit = info.statusInfo.Unit,
-                    GroupInfo = info.statusInfo.GroupInfo?.Name,
+                    DeviceName = processOption.DeviceInfo.DeviceName,
+                    Name = processOption.StatusInfo.Name,
+                    Unit = processOption.StatusInfo.Unit,
+                    GroupInfo = processOption.StatusInfo.GroupInfoName,
                 };
 
                 dataDisplay[(friendlyDisplay.DeviceName, friendlyDisplay.Name)] = friendlyDisplay;
@@ -145,7 +150,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
                     await canReceiveSingle.ReceiveDataAsync(friendlyDisplay);
                 }
 
-                if (friendlyDisplay.GroupInfo != null && sub.Value.EventGroupCanReceives.TryGetValue(friendlyDisplay.GroupInfo, out var canReceiveGroup))
+                if (!string.IsNullOrEmpty(friendlyDisplay.GroupInfo) && sub.Value.EventGroupCanReceives.TryGetValue(friendlyDisplay.GroupInfo, out var canReceiveGroup))
                 {
                     if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventGroupCanReceives ReceiveDataAsync {friendlyDisplay}", nameof(ProcessEvent), friendlyDisplay);
 

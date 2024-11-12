@@ -18,10 +18,11 @@ sealed public class Event : IDbItem
 
     public long EventId { get; set; }
     public int RowEntryId { get; set; }
-    public decimal? Data { get; set; }
+    public decimal Data { get; set; }
     public long UnixTime { get; set; }
 
     public RowEntry EspHomeId { get; set; }
 
     public string SourceId { get; set; }
+    public bool IsGroup { get; set; }
 }
