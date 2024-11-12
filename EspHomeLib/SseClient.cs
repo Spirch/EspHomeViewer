@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 namespace EspHomeLib;
 public class SseClient : IDisposable
 {
-    private readonly IOptionsMonitor<EsphomeOptions> _esphomeOptionsMonitor;
     private readonly IDisposable _esphomeOptionsDispose;
     private EsphomeOptions _esphomeOptions;
 
@@ -44,28 +43,18 @@ public class SseClient : IDisposable
     public SseClient(IHttpClientFactory httpClientFactory, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
-        _esphomeOptionsMonitor = esphomeOptionsMonitor;
         _logger = logger;
+        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
 
-        InitOption();
-
-        _esphomeOptionsDispose = _esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
-    private void OnOptionChanged(EsphomeOptions _)
+    private void OnOptionChanged(EsphomeOptions currentValue)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(SseClient));
 
-        InitOption();
+        _esphomeOptions = currentValue;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClient));
-    }
-    private void InitOption()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(SseClient));
-
-        _esphomeOptions = _esphomeOptionsMonitor.CurrentValue;
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(SseClient));
     }
 
     public void Dispose()

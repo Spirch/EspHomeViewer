@@ -28,7 +28,7 @@ public partial class SingleInput : IEventCanReceive
 
     protected override void OnParametersSet()
     {
-        Data = ProcessEvent.TryGetValue(DeviceName, Name)?.Data;
+        Data = ProcessEvent.TryGetData(DeviceName, Name);
         Subscriber.EventSingleCanReceives.TryAdd((DeviceName, Name), this);
     }
 

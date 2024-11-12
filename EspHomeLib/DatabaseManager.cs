@@ -1,4 +1,5 @@
-﻿using EspHomeLib.Database.Model;
+﻿using EspHomeLib.Database;
+using EspHomeLib.Database.Model;
 using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using EspHomeLib.Option;
@@ -18,10 +19,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EspHomeLib.Database;
-public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanReceive, IDisposable
+namespace EspHomeLib;
+public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCanReceive, IDisposable
 {
-    private readonly IOptionsMonitor<EsphomeOptions> _esphomeOptionsMonitor;
     private readonly IDisposable _esphomeOptionsDispose;
     private EsphomeOptions _esphomeOptions;
 
@@ -30,41 +30,42 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
     private readonly EfContext _efContext;
     private readonly BlockingCollection<IDbItem> Queue = new();
 
-    private ConcurrentDictionary<string, RecordData> recordData = new();
+    private readonly ConcurrentDictionary<string, RecordData> recordData = new();
 
     private readonly Subscriber subscriber;
     private Task runningInstance;
 
-    public EfManager(ProcessEvent processEvent, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, EfContext efContext, ILogger<SseClient> logger)
+    public DatabaseManager(ProcessEvent processEvent, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, EfContext efContext, ILogger<SseClient> logger)
     {
         _efContext = efContext;
         _processEvent = processEvent;
-        _esphomeOptionsMonitor = esphomeOptionsMonitor;
         _logger = logger;
+        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
 
         InitOption();
 
         subscriber = _processEvent.Subscribe(this);
         subscriber.EveryRawEvent = this;
 
-        _esphomeOptionsDispose = _esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
-    private void OnOptionChanged(EsphomeOptions _)
+    private void OnOptionChanged(EsphomeOptions currentValue)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(DatabaseManager));
+
+        _esphomeOptions = currentValue;
 
         InitOption();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(DatabaseManager));
     }
     private void InitOption()
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(DatabaseManager));
 
-        _esphomeOptions = _esphomeOptionsMonitor.CurrentValue;
         InitRecordData();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(DatabaseManager));
     }
 
     private void InitRecordData()
@@ -141,32 +142,32 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
 
     public void Dispose()
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
 
         _processEvent.Unsubscribe(this);
         _esphomeOptionsDispose?.Dispose();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(DatabaseManager));
 
         runningInstance = RunAndProcessAsync();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(DatabaseManager));
 
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(DatabaseManager));
 
         Queue.CompleteAdding();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(EfManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(DatabaseManager));
 
         return Task.CompletedTask;
     }
@@ -244,13 +245,10 @@ public class EfManager : IHostedService, IProcessEventSubscriber, IEventCanRecei
         if (_processEvent.DeviceInfo.TryGetValue(espEvent.Id, out var processOption) &&
             processOption.GroupInfo != null)
         {
-            var singleGroupInfo = recordData.Values.Where(x => string.Equals(x.GroupInfoName, processOption.GroupInfo.Name, StringComparison.OrdinalIgnoreCase))
-                                                   .ToList();
-
             var newEvent = new Event()
             {
                 SourceId = processOption.GroupInfo.Id,
-                Data = singleGroupInfo.Sum(x => x.LastValue),
+                Data = _processEvent.TryGetSumValue(processOption.GroupInfo.Name) ?? 0m,
                 UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 IsGroup = true,
             };

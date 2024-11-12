@@ -29,7 +29,7 @@ builder.Services.AddTransient<SseClient>();
 builder.Services.AddSingleton<ProcessEvent>();
 
 builder.Services.AddHostedService<SseClientManager>();
-builder.Services.AddHostedService<EfManager>();
+builder.Services.AddHostedService<DatabaseManager>();
 
 var app = builder.Build();
 

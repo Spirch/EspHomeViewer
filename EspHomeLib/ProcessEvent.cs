@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 namespace EspHomeLib;
 public class ProcessEvent : IProcessEvent, IDisposable
 {
-    private readonly IOptionsMonitor<EsphomeOptions> _esphomeOptionsMonitor;
     private readonly IDisposable _esphomeOptionsDispose;
     private EsphomeOptions _esphomeOptions;
 
@@ -27,12 +26,12 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
     public ProcessEvent(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<ProcessEvent> logger)
     {
-        _esphomeOptionsMonitor = esphomeOptionsMonitor;
         _logger = logger;
+        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
 
         InitOption();
 
-        _esphomeOptionsDispose = _esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
 
     public Subscriber Subscribe(IProcessEventSubscriber sub)
@@ -55,9 +54,11 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Unsubscribe Stop {Count}", nameof(ProcessEvent), subscriber.Count);
     }
 
-    private void OnOptionChanged(EsphomeOptions _)
+    private void OnOptionChanged(EsphomeOptions currentValue)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(ProcessEvent));
+
+        _esphomeOptions = currentValue;
 
         InitOption();
 
@@ -67,8 +68,6 @@ public class ProcessEvent : IProcessEvent, IDisposable
     private void InitOption()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(ProcessEvent));
-
-        _esphomeOptions = _esphomeOptionsMonitor.CurrentValue;
 
         DeviceInfo = (from deviceInfo in _esphomeOptions.DeviceInfo
                     from statusInfo in _esphomeOptions.StatusInfo
@@ -85,6 +84,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(ProcessEvent));
     }
+
     public void Dispose()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(ProcessEvent));
@@ -94,7 +94,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(ProcessEvent));
     }
 
-    public FriendlyDisplay TryGetValue(string deviceName, string name)
+    public decimal? TryGetData(string deviceName, string name)
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {deviceName} {name}", nameof(ProcessEvent), deviceName, name);
 
@@ -102,7 +102,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {shortForm}", nameof(ProcessEvent), friendlyDisplay);
 
-        return friendlyDisplay;
+        return friendlyDisplay?.Data;
     }
 
     public decimal? TryGetSumValue(string groupInfo)

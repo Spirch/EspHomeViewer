@@ -1,5 +1,4 @@
-﻿using EspHomeLib.Database;
-using EspHomeLib.Option;
+﻿using EspHomeLib.Option;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,14 +7,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib;
 public class SseClientManager : IHostedService, IDisposable
 {
-    private readonly IOptionsMonitor<EsphomeOptions> _esphomeOptionsMonitor;
     private readonly IDisposable _esphomeOptionsDispose;
     private EsphomeOptions _esphomeOptions;
 
@@ -25,35 +22,26 @@ public class SseClientManager : IHostedService, IDisposable
     private readonly ProcessEvent _processEvent;
 
     public SseClientManager(IServiceProvider serviceProvider,
-                            IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
                             ILogger<SseClientManager> logger,
-                            ProcessEvent processEvent)
+                            ProcessEvent processEvent,
+                            IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor)
     {
         _serviceProvider = serviceProvider;
-        _esphomeOptionsMonitor = esphomeOptionsMonitor;
         _processEvent = processEvent;
         _logger = logger;
+        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
 
-        InitOption();
-
-        _esphomeOptionsDispose = _esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
-    private void OnOptionChanged(EsphomeOptions _)
+
+    private void OnOptionChanged(EsphomeOptions currentValue)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(SseClientManager));
 
-        InitOption();
+        _esphomeOptions = currentValue;
+        OnConfigChange(currentValue);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClientManager));
-    }
-
-    private void InitOption()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(SseClientManager));
-
-        _esphomeOptions = _esphomeOptionsMonitor.CurrentValue;
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(SseClientManager));
     }
 
     public void Dispose()
