@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Diagnostics.Tracing;
 using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Pages;

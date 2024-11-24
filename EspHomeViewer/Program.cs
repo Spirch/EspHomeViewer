@@ -1,18 +1,7 @@
-using EspHomeViewer.Components;
-using EspHomeLib;
-using EspHomeLib.Database;
-using EspHomeLib.Option;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Reflection.Metadata;
-using System.Threading;
-using EspHomeLib.HostedServices;
 using EspHomeLib.Helper;
+using EspHomeViewer.Components;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 

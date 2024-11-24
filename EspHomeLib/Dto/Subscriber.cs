@@ -1,10 +1,6 @@
 ﻿using EspHomeLib.Interface;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EspHomeLib.Dto;
 public class Subscriber : IDisposable
@@ -22,7 +18,7 @@ public class Subscriber : IDisposable
 
     public void Dispose()
     {
-        EventSingleCanReceives.Clear(); 
+        EventSingleCanReceives.Clear();
         EventGroupCanReceives.Clear();
         EveryRawEvent = null;
         _instance = null;

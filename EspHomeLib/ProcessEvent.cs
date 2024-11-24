@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -73,17 +72,17 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(ProcessEvent));
 
         DeviceInfo = (from deviceInfo in _esphomeOptions.DeviceInfo
-                    from statusInfo in _esphomeOptions.StatusInfo
-                    select new
-                    {
-                        key = string.Concat(statusInfo.Prefix, deviceInfo.Name, statusInfo.Suffix),
-                        processOption = new ProcessOption()
-                        {
-                            DeviceInfo = deviceInfo,
-                            StatusInfo = statusInfo,
-                            GroupInfo = _esphomeOptions.GroupInfo.FirstOrDefault(x => string.Equals(statusInfo.GroupInfoName, x.Name, StringComparison.OrdinalIgnoreCase))
-                        }
-                    }).ToFrozenDictionary(k => k.key, v => v.processOption);
+                      from statusInfo in _esphomeOptions.StatusInfo
+                      select new
+                      {
+                          key = string.Concat(statusInfo.Prefix, deviceInfo.Name, statusInfo.Suffix),
+                          processOption = new ProcessOption()
+                          {
+                              DeviceInfo = deviceInfo,
+                              StatusInfo = statusInfo,
+                              GroupInfo = _esphomeOptions.GroupInfo.FirstOrDefault(x => string.Equals(statusInfo.GroupInfoName, x.Name, StringComparison.OrdinalIgnoreCase))
+                          }
+                      }).ToFrozenDictionary(k => k.key, v => v.processOption);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(ProcessEvent));
     }
@@ -92,7 +91,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(ProcessEvent));
 
-        foreach(var sub in subscriber)
+        foreach (var sub in subscriber)
         {
             sub.Value.Dispose();
         }

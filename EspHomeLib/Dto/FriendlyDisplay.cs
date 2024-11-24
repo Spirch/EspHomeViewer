@@ -1,6 +1,4 @@
-﻿using EspHomeLib.Option;
-
-namespace EspHomeLib.Dto;
+﻿namespace EspHomeLib.Dto;
 public class FriendlyDisplay
 {
     public string DeviceName { get; set; }

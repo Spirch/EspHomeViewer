@@ -1,16 +1,13 @@
 ﻿using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using EspHomeLib.Option;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +21,7 @@ public class SseClient : IDisposable
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SseClient> _logger;
 
-    private readonly SemaphoreSlim _semaphore = new(1,1);
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
     private Uri _uri;
 
     private CancellationTokenSource cancellationTokenSource;
@@ -77,7 +74,7 @@ public class SseClient : IDisposable
 
     public override string ToString()
     {
-        if(_uri == null)
+        if (_uri == null)
         {
             return base.ToString();
         }
@@ -201,7 +198,7 @@ public class SseClient : IDisposable
 
             if (handleNext && data.StartsWith(DATA_JSON, StringComparison.OrdinalIgnoreCase))
             {
-                if (_logger.IsEnabled(LogLevel.Debug))  _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, data);
+                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, data);
 
                 timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
 
@@ -209,7 +206,7 @@ public class SseClient : IDisposable
 
                 json.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-                if(OnEventReceived != null)
+                if (OnEventReceived != null)
                 {
                     await OnEventReceived.SendAsync(json, _uri);
                 }

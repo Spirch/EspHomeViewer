@@ -1,9 +1,9 @@
-﻿using EspHomeLib.Dto;
-using EspHomeLib;
+﻿using EspHomeLib;
+using EspHomeLib.Dto;
+using EspHomeLib.Interface;
 using Microsoft.AspNetCore.Components;
 using System;
 using System.Threading.Tasks;
-using EspHomeLib.Interface;
 
 namespace EspHomeViewer.Components.Control;
 

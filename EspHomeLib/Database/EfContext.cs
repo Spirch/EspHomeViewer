@@ -1,9 +1,6 @@
 ﻿using EspHomeLib.Database.Model;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using System.IO;
-using System.Reflection.Metadata;
-using System.Threading.Tasks;
 
 namespace EspHomeLib.Database;
 

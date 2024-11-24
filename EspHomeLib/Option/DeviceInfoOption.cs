@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace EspHomeLib.Option;
+﻿namespace EspHomeLib.Option;
 public class DeviceInfoOption
 {
     public string Name { get; set; }

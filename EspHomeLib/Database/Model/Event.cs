@@ -6,7 +6,7 @@ sealed public class Event : IDbItem
 {
     public Event()
     {
-        
+
     }
 
     public Event(EspEvent espEvent)
