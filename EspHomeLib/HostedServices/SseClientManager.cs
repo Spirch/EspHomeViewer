@@ -111,15 +111,15 @@ public class SseClientManager : IHostedService, IDisposable
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnConfigChange End", nameof(SseClientManager));
     }
+
     private void AddClient(Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} Start", nameof(SseClientManager), uri);
 
         var sseClient = _serviceProvider.GetRequiredService<SseClient>();
+        _sseClients[uri] = sseClient;
 
         sseClient.OnEventReceived = _processEvent;
-
-        _sseClients[uri] = sseClient;
         sseClient.Start(uri);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);

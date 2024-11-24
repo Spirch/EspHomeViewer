@@ -49,6 +49,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
         _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
+
     private void OnOptionChanged(EsphomeOptions currentValue)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(DatabaseManager));
@@ -59,6 +60,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(DatabaseManager));
     }
+
     private void InitOption()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(DatabaseManager));

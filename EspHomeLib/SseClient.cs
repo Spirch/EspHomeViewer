@@ -31,6 +31,8 @@ public class SseClient : IDisposable
 
     public IProcessEvent OnEventReceived { get; set; }
 
+    private Task runningInstance;
+
     private readonly JsonSerializerOptions jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -61,8 +63,9 @@ public class SseClient : IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
-        Stop();
-        _semaphore.Wait();
+        cancellationTokenSource?.Cancel();
+        _semaphore.Wait(); //wait until the cancelled is completed
+
         _semaphore.Dispose();
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
@@ -89,20 +92,11 @@ public class SseClient : IDisposable
         if (cancellationTokenSource == null)
         {
             cancellationTokenSource = new CancellationTokenSource();
-            _ = StartMonitoringAsync(uri);
+            runningInstance = StartMonitoringAsync(uri);
             _uri = uri;
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Start {uri} End", nameof(SseClient), uri);
-    }
-
-    public void Stop()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Stop {_uri} Start", nameof(SseClient), _uri);
-
-        cancellationTokenSource?.Cancel();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Stop {_uri} End", nameof(SseClient), _uri);
     }
 
     private async Task StartMonitoringAsync(Uri uri)

@@ -36,22 +36,25 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
     public Subscriber Subscribe(IProcessEventSubscriber sub)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Subscribe Start {Count}", nameof(ProcessEvent), subscriber.Count);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Subscribe Start {Count} {Name}", nameof(ProcessEvent), subscriber.Count, sub);
 
-        var result = subscriber.GetOrAdd(sub, new Subscriber());
+        var result = subscriber.GetOrAdd(sub, new Subscriber(sub));
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Subscribe Stop {Count}", nameof(ProcessEvent), subscriber.Count);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Subscribe Stop {Count} {Name}", nameof(ProcessEvent), subscriber.Count, sub);
 
         return result;
     }
 
     public void Unsubscribe(IProcessEventSubscriber sub)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Unsubscribe Start {Count}", nameof(ProcessEvent), subscriber.Count);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Unsubscribe Start {Count} {Name}", nameof(ProcessEvent), subscriber.Count, sub);
 
-        subscriber.TryRemove(sub, out var inst);
+        if (subscriber.TryRemove(sub, out var inst))
+        {
+            inst.Dispose();
+        }
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Unsubscribe Stop {Count}", nameof(ProcessEvent), subscriber.Count);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Unsubscribe Stop {Count} {Name}", nameof(ProcessEvent), subscriber.Count, sub);
     }
 
     private void OnOptionChanged(EsphomeOptions currentValue)
@@ -88,6 +91,13 @@ public class ProcessEvent : IProcessEvent, IDisposable
     public void Dispose()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(ProcessEvent));
+
+        foreach(var sub in subscriber)
+        {
+            sub.Value.Dispose();
+        }
+
+        subscriber.Clear();
 
         _esphomeOptionsDispose?.Dispose();
 
@@ -126,54 +136,66 @@ public class ProcessEvent : IProcessEvent, IDisposable
         {
             if (!dataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
             {
-                friendlyDisplay = new()
-                {
-                    DeviceName = processOption.DeviceInfo.DeviceName,
-                    Name = processOption.StatusInfo.Name,
-                    Unit = processOption.StatusInfo.Unit,
-                    GroupInfo = processOption.StatusInfo.GroupInfoName,
-                };
-
-                dataDisplay[(friendlyDisplay.DeviceName, friendlyDisplay.Name)] = friendlyDisplay;
+                friendlyDisplay = AddNewFriendlyDisplay(processOption);
             }
 
             friendlyDisplay.Data = espEvent.Data;
 
-            bool gcCollected = false;
-
-            foreach(var sub in subscriber)
-            {
-                if (sub.Value.EventSingleCanReceives.TryGetValue((friendlyDisplay.DeviceName, friendlyDisplay.Name), out var canReceiveSingle))
-                {
-                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventSingleCanReceives ReceiveDataAsync {friendlyDisplay}", nameof(ProcessEvent), friendlyDisplay);
-
-                    await canReceiveSingle.ReceiveDataAsync(friendlyDisplay);
-                }
-
-                if (!string.IsNullOrEmpty(friendlyDisplay.GroupInfo) && sub.Value.EventGroupCanReceives.TryGetValue(friendlyDisplay.GroupInfo, out var canReceiveGroup))
-                {
-                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventGroupCanReceives ReceiveDataAsync {friendlyDisplay}", nameof(ProcessEvent), friendlyDisplay);
-
-                    await canReceiveGroup.ReceiveDataAsync(friendlyDisplay);
-                }
-
-                if(sub.Value.EveryRawEvent != null)
-                {
-                    await sub.Value.EveryRawEvent.ReceiveRawDataAsync(espEvent);
-                }
-
-                gcCollected = await sub.Key.GcCollected(gcCollected);
-            }
+            await DispatchDataAsync(espEvent, friendlyDisplay);
         }
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} End", nameof(ProcessEvent), uri);
+    }
+
+    private FriendlyDisplay AddNewFriendlyDisplay(ProcessOption processOption)
+    {
+        FriendlyDisplay friendlyDisplay = new()
+        {
+            DeviceName = processOption.DeviceInfo.DeviceName,
+            Name = processOption.StatusInfo.Name,
+            Unit = processOption.StatusInfo.Unit,
+            GroupInfo = processOption.StatusInfo.GroupInfoName,
+        };
+
+        dataDisplay[(friendlyDisplay.DeviceName, friendlyDisplay.Name)] = friendlyDisplay;
+
+        return friendlyDisplay;
+    }
+
+    private async Task DispatchDataAsync(EspEvent espEvent, FriendlyDisplay friendlyDisplay)
+    {
+        bool gcCollected = false; //to do remove?
+
+        foreach (var sub in subscriber)
+        {
+            if (sub.Value.EventSingleCanReceives.TryGetValue((friendlyDisplay.DeviceName, friendlyDisplay.Name), out var canReceiveSingle))
+            {
+                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventSingleCanReceives ReceiveDataAsync {friendlyDisplay}", nameof(ProcessEvent), friendlyDisplay);
+
+                await canReceiveSingle.ReceiveDataAsync(friendlyDisplay);
+            }
+
+            if (!string.IsNullOrEmpty(friendlyDisplay.GroupInfo) && sub.Value.EventGroupCanReceives.TryGetValue(friendlyDisplay.GroupInfo, out var canReceiveGroup))
+            {
+                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventGroupCanReceives ReceiveDataAsync {friendlyDisplay}", nameof(ProcessEvent), friendlyDisplay);
+
+                await canReceiveGroup.ReceiveDataAsync(friendlyDisplay);
+            }
+
+            if (sub.Value.EveryRawEvent != null)
+            {
+                await sub.Value.EveryRawEvent.ReceiveRawDataAsync(espEvent);
+            }
+
+            gcCollected = await sub.Key.GcCollected(gcCollected); //to do remove?
+        }
     }
 
     public async Task SendAsync(Exception exception, Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived {uri} Start", nameof(ProcessEvent), uri);
 
-        //if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived Invoke {exception}", nameof(ProcessEvent), exception);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived Invoke {exception}", nameof(ProcessEvent), exception);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived {uri} Stop", nameof(ProcessEvent), uri);
 
@@ -184,7 +206,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived {uri} Start", nameof(ProcessEvent), uri);
 
-        //if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived Invoke {data}", nameof(ProcessEvent), data);
+        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived Invoke {data}", nameof(ProcessEvent), data);
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived {uri} Stop", nameof(ProcessEvent), uri);
 

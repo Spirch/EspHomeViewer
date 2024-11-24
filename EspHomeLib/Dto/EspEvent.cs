@@ -16,6 +16,9 @@ public class EspEvent
     public string State { get; set; }
     public string Event_Type { get; set; }
 
+
+    // custom field from this point
+
     public long UnixTime { get; set; }
     public decimal Data
     {

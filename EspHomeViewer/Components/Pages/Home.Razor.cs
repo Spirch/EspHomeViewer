@@ -37,24 +37,28 @@ public partial class Home : IProcessEventSubscriber, IDisposable
 
     public async Task<bool> GcCollected(bool alreadyCollected)
     {
-        if(!alreadyCollected && ++eventCount > 500)
-        {
-            if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("{Class} GcCollected Start", nameof(Home));
-
-            //GC.Collect();
-            eventCount = 0;
-
-            alreadyCollected = true;
-
-            if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("{Class} GcCollected Stop", nameof(Home));
-        }
-        else if (alreadyCollected)
-        {
-            eventCount = 0;
-        }
-
         await Task.CompletedTask;
 
-        return alreadyCollected;
+        return false;
+
+        //if(!alreadyCollected && ++eventCount > 500)
+        //{
+        //    if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("{Class} GcCollected Start", nameof(Home));
+
+        //    GC.Collect();
+        //    eventCount = 0;
+
+        //    alreadyCollected = true;
+
+        //    if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("{Class} GcCollected Stop", nameof(Home));
+        //}
+        //else if (alreadyCollected)
+        //{
+        //    eventCount = 0;
+        //}
+
+        //await Task.CompletedTask;
+
+        //return alreadyCollected;
     }
 }
