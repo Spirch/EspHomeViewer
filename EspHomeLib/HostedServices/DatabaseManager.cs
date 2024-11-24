@@ -19,7 +19,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EspHomeLib;
+namespace EspHomeLib.HostedServices;
 public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCanReceive, IDisposable
 {
     private readonly IDisposable _esphomeOptionsDispose;

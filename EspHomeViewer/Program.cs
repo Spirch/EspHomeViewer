@@ -11,25 +11,17 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Reflection.Metadata;
 using System.Threading;
+using EspHomeLib.HostedServices;
+using EspHomeLib.Helper;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-var dbname = builder.Configuration.GetValue<string>("DefaultConnection");
-await EfContext.CreateDBIfNotExistAsync(dbname);
+builder.Services.AddSseManager(builder.Configuration);
 
-builder.Services.AddDbContext<EfContext>(options => options.UseSqlite($"Data Source={dbname}"), ServiceLifetime.Singleton);
-
-builder.Services.Configure<EsphomeOptions>(builder.Configuration.GetSection("EsphomeOptions"));
-
-builder.Services.AddHttpClient();
-builder.Services.AddTransient<SseClient>();
-builder.Services.AddSingleton<ProcessEvent>();
-
-builder.Services.AddHostedService<SseClientManager>();
-builder.Services.AddHostedService<DatabaseManager>();
+builder.Services.AddDatabaseManager(builder.Configuration);
 
 var app = builder.Build();
 

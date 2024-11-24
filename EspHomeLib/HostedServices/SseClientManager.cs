@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EspHomeLib;
+namespace EspHomeLib.HostedServices;
 public class SseClientManager : IHostedService, IDisposable
 {
     private readonly IDisposable _esphomeOptionsDispose;
@@ -60,7 +60,7 @@ public class SseClientManager : IHostedService, IDisposable
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if(_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
 
         InitializeClients(_esphomeOptions.Uri);
 
