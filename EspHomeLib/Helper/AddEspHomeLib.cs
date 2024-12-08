@@ -28,4 +28,11 @@ public static class AddEspHomeLib
 
         return services;
     }
+
+    public static IServiceCollection AddGraphServices(this IServiceCollection services)
+    {
+        services.AddSingleton<GraphServices>();
+
+        return services;
+    }
 }

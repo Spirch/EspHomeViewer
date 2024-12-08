@@ -2,14 +2,14 @@
 <Item>
     @StatusInfo.Name
     <SubMenu Id="@($"{StatusInfo.Prefix}{{0}}{StatusInfo.Suffix}")">
-        <MenuItemDay OnClick="@OnClick" />
+        <MenuItemDay OnMenuGraphClickAsync="@OnMenuGraphClickAsync" />
     </SubMenu>
 </Item>
 
 @code
 {
     [EditorRequired, Parameter]
-    public EventCallback<ItemClickEventArgs> OnClick { get; set; }
+    public EventCallback<ItemClickEventArgs> OnMenuGraphClickAsync { get; set; }
 
 
     [EditorRequired, Parameter]

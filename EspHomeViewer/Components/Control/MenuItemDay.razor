@@ -1,12 +1,12 @@
-﻿<Item Id="1" OnClick="@OnClick">1 day</Item>
-<Item Id="3" OnClick="@OnClick">3 days</Item>
-<Item Id="7" OnClick="@OnClick">7 days</Item>
-<Item Id="14" OnClick="@OnClick">14 days</Item>
-<Item Id="30" OnClick="@OnClick">30 days</Item>
-<Item Id="0" OnClick="@OnClick">All</Item>
+﻿<Item Id="1" OnClick="@OnMenuGraphClickAsync">1 day</Item>
+<Item Id="3" OnClick="@OnMenuGraphClickAsync">3 days</Item>
+<Item Id="7" OnClick="@OnMenuGraphClickAsync">7 days</Item>
+<Item Id="14" OnClick="@OnMenuGraphClickAsync">14 days</Item>
+<Item Id="30" OnClick="@OnMenuGraphClickAsync">30 days</Item>
+<Item Id="0" OnClick="@OnMenuGraphClickAsync">All</Item>
 
 @code
 {
     [EditorRequired, Parameter]
-    public EventCallback<ItemClickEventArgs> OnClick { get; set; }
+    public EventCallback<ItemClickEventArgs> OnMenuGraphClickAsync { get; set; }
 }

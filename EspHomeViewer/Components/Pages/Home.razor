@@ -46,13 +46,13 @@
 </script>
 
 <ContextMenu Id="TotalMenu">
-    <MenuItemDay OnClick="@OnClick" />
+    <MenuItemDay OnMenuGraphClickAsync="@OnMenuGraphClickAsync" />
 </ContextMenu>
 
 <ContextMenu Id="DeviceMenu">
     @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo)
     {
-        <SubMenuDay StatusInfo="@status" OnClick="@OnClick"></SubMenuDay>
+        <SubMenuDay StatusInfo="@status" OnMenuGraphClickAsync="@OnMenuGraphClickAsync"></SubMenuDay>
     }
 </ContextMenu>
 

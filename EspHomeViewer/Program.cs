@@ -13,6 +13,8 @@ builder.Services.AddSseManager(builder.Configuration);
 
 builder.Services.AddDatabaseManager(builder.Configuration);
 
+builder.Services.AddGraphServices();
+
 builder.Services.AddBlazorContextMenu();
 
 var app = builder.Build();
@@ -21,6 +23,6 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+   .AddInteractiveServerRenderMode();
 
 app.Run();
