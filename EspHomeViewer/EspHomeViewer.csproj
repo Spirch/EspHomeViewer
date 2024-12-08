@@ -10,6 +10,11 @@
         <ServerGarbageCollection>false</ServerGarbageCollection>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
+      <PackageReference Include="ScottPlot" Version="5.0.47" />
+    </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\EspHomeLib\EspHomeLib.csproj" />
   </ItemGroup>

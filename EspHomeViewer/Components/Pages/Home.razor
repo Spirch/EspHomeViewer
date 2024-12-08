@@ -4,7 +4,7 @@
 
 <style>
     body {
-        background-color:black;
+        background-color: black;
     }
 
     table {
@@ -31,14 +31,42 @@
     }
 </style>
 
+<script>
+    window.downloadFileFromStream = async (fileName, contentStreamReference) => {
+        const arrayBuffer = await contentStreamReference.arrayBuffer();
+        const blob = new Blob([arrayBuffer]);
+        const url = URL.createObjectURL(blob);
+        const anchorElement = document.createElement('a');
+        anchorElement.href = url;
+        anchorElement.download = fileName ?? '';
+        anchorElement.click();
+        anchorElement.remove();
+        URL.revokeObjectURL(url);
+    }
+</script>
+
+<ContextMenu Id="TotalMenu">
+    <MenuItemDay OnClick="@OnClick" />
+</ContextMenu>
+
+<ContextMenu Id="DeviceMenu">
+    @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo)
+    {
+        <SubMenuDay StatusInfo="@status" OnClick="@OnClick"></SubMenuDay>
+    }
+</ContextMenu>
+
 <PageTitle>S31 Data</PageTitle>
 <table>
     @foreach (var group in EsphomeOptions.CurrentValue.GroupInfo)
     {
         <tr>
-            <td>@group.Title</td>
+            <td>
+                <ContextMenuTrigger MenuId="TotalMenu" MouseButtonTrigger="MouseButtonTrigger.Left" Id="@group.Id">
+                    @group.Title
+                </ContextMenuTrigger>
+            </td>
             <td><TotalOutput GroupInfo="@group.Name" Unit="@group.Unit" Subscriber="subscriber" /></td>
-            @* <td>@ProcessEvent.TryGetSumValue(group.Name) @group.Unit</td> *@
         </tr>
     }
 </table>
@@ -56,11 +84,13 @@
     @foreach (var device in EsphomeOptions.CurrentValue.DeviceInfo)
     {
         <tr>
-            <td>@device.DeviceName</td>
+            <td>
+                <ContextMenuTrigger MenuId="DeviceMenu" MouseButtonTrigger="MouseButtonTrigger.Left" Id="@device.Name">
+                    @device.DeviceName
+                </ContextMenuTrigger>
+            </td>
             @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo.Where(x => !x.Hidden))
             {
-               @*  var friendly = @ProcessEvent.TryGetValue(device.DeviceName, status.Name);
-                <td>@friendly?.Data @friendly?.Unit</td> *@
                 <td><SingleInput DeviceName="@device.DeviceName" Name="@status.Name" Unit="@status.Unit" Subscriber="subscriber" /></td>
             }
         </tr>

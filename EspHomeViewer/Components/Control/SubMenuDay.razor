@@ -1,0 +1,17 @@
+﻿@using EspHomeLib.Option
+<Item>
+    @StatusInfo.Name
+    <SubMenu Id="@($"{StatusInfo.Prefix}{{0}}{StatusInfo.Suffix}")">
+        <MenuItemDay OnClick="@OnClick" />
+    </SubMenu>
+</Item>
+
+@code
+{
+    [EditorRequired, Parameter]
+    public EventCallback<ItemClickEventArgs> OnClick { get; set; }
+
+
+    [EditorRequired, Parameter]
+    public StatusInfoOption StatusInfo { get; set; }
+}
