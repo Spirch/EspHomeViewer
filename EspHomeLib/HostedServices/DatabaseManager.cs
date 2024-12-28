@@ -68,7 +68,9 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     {
         foreach (var device in _processEvent.DeviceInfo)
         {
-            RowEntry rowEntry = _efContext.RowEntry.FirstOrDefault(x => x.Name == device.Key);
+            RowEntry rowEntry = _efContext.RowEntry
+                                          .FirstOrDefault(x => x.Name == device.Key &&
+                                                               x.FriendlyName == device.Value.DeviceInfo.DeviceName);
 
             if (rowEntry == null)
             {
