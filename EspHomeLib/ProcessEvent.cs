@@ -163,8 +163,6 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
     private async Task DispatchDataAsync(EspEvent espEvent, FriendlyDisplay friendlyDisplay)
     {
-        bool gcCollected = false; //to do remove?
-
         foreach (var sub in subscriber)
         {
             if (sub.Value.EventSingleCanReceives.TryGetValue((friendlyDisplay.DeviceName, friendlyDisplay.Name), out var canReceiveSingle))
@@ -185,8 +183,6 @@ public class ProcessEvent : IProcessEvent, IDisposable
             {
                 await sub.Value.EveryRawEvent.ReceiveRawDataAsync(espEvent);
             }
-
-            gcCollected = await sub.Key.GcCollected(gcCollected); //to do remove?
         }
     }
 

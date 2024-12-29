@@ -283,13 +283,6 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         });
     }
 
-    public async Task<bool> GcCollected(bool alreadyCollected)
-    {
-        await Task.CompletedTask;
-
-        return false;
-    }
-
     public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
     {
         await Task.CompletedTask;

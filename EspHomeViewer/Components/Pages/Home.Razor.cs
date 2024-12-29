@@ -32,7 +32,6 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     IJSRuntime JS { get; set; }
 
     private Subscriber subscriber;
-    private int eventCount;
 
     public void Dispose()
     {
@@ -42,33 +41,6 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     protected override void OnParametersSet()
     {
         subscriber = ProcessEvent.Subscribe(this);
-    }
-
-    public async Task<bool> GcCollected(bool alreadyCollected)
-    {
-        await Task.CompletedTask;
-
-        return false;
-
-        //if(!alreadyCollected && ++eventCount > 500)
-        //{
-        //    if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("{Class} GcCollected Start", nameof(Home));
-
-        //    GC.Collect();
-        //    eventCount = 0;
-
-        //    alreadyCollected = true;
-
-        //    if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("{Class} GcCollected Stop", nameof(Home));
-        //}
-        //else if (alreadyCollected)
-        //{
-        //    eventCount = 0;
-        //}
-
-        //await Task.CompletedTask;
-
-        //return alreadyCollected;
     }
 
     private async Task OnMenuGraphClickAsync(ItemClickEventArgs e)
