@@ -36,7 +36,7 @@ public partial class TotalOutput : IEventCanReceive
         await InvokeAsync(StateHasChanged);
     }
 
-    public async Task ReceiveDataAsync(Exception exception)
+    public async Task ReceiveDataAsync(Exception exception, Uri uri)
     {
         await Task.CompletedTask;
     }

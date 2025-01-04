@@ -46,6 +46,12 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     private async Task OnMenuGraphClickAsync(ItemClickEventArgs e)
     {
         string name;
+        string data = null;
+
+        if (e.Data is string)
+        {
+            data = e.Data.ToString();
+        }
 
         if(int.TryParse(e.MenuItem.Id, out int day))
         {
@@ -60,7 +66,7 @@ public partial class Home : IProcessEventSubscriber, IDisposable
 
             if (!string.IsNullOrEmpty(name))
             {
-                var graph = await GraphServices.GraphAsync(name, day);
+                var graph = await GraphServices.GraphAsync(name, data, day);
 
                 await DownloadFileFromStream(graph);
             }

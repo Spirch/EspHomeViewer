@@ -6,7 +6,7 @@ namespace EspHomeLib.Interface;
 public interface IEventCanReceive
 {
     public Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay);
-    public Task ReceiveDataAsync(Exception exception);
+    public Task ReceiveDataAsync(Exception exception, Uri uri);
     public Task ReceiveDataAsync(string rawMessage);
     public Task ReceiveRawDataAsync(EspEvent espEvent);
 }

@@ -1,4 +1,5 @@
 ﻿using EspHomeLib.Dto;
+using EspHomeLib.Helper;
 using EspHomeLib.Interface;
 using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
@@ -138,7 +139,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
                 friendlyDisplay = AddNewFriendlyDisplay(processOption);
             }
 
-            friendlyDisplay.Data = espEvent.Data;
+            friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
 
             await DispatchDataAsync(espEvent, friendlyDisplay);
         }
@@ -179,9 +180,10 @@ public class ProcessEvent : IProcessEvent, IDisposable
                 await canReceiveGroup.ReceiveDataAsync(friendlyDisplay);
             }
 
-            if (sub.Value.EveryRawEvent != null)
+            var onEvent = sub.Value.OnEvent;
+            if (onEvent != null)
             {
-                await sub.Value.EveryRawEvent.ReceiveRawDataAsync(espEvent);
+                await onEvent.ReceiveRawDataAsync(espEvent);
             }
         }
     }
@@ -191,6 +193,15 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived {uri} Start", nameof(ProcessEvent), uri);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived Invoke {exception}", nameof(ProcessEvent), exception);
+
+        foreach (var sub in subscriber)
+        {
+            var onEvent = sub.Value.OnEvent;
+            if (onEvent != null)
+            {
+                await onEvent.ReceiveDataAsync(exception, uri);
+            }
+        }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived {uri} Stop", nameof(ProcessEvent), uri);
 

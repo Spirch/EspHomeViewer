@@ -1,4 +1,5 @@
 ﻿using EspHomeLib.Dto;
+using EspHomeLib.Helper;
 
 namespace EspHomeLib.Database.Model;
 
@@ -11,7 +12,7 @@ sealed public class Event : IDbItem
 
     public Event(EspEvent espEvent)
     {
-        Data = espEvent.Data;
+        Data = espEvent.Value.ConvertToDecimal();
         UnixTime = espEvent.UnixTime;
         SourceId = espEvent.Id;
     }

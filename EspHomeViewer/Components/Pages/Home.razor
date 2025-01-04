@@ -85,7 +85,7 @@
     {
         <tr>
             <td>
-                <ContextMenuTrigger MenuId="DeviceMenu" MouseButtonTrigger="MouseButtonTrigger.Left" Id="@device.Name">
+                <ContextMenuTrigger Data="@device.DeviceName" MenuId="DeviceMenu" MouseButtonTrigger="MouseButtonTrigger.Left" Id="@device.Name">
                     @device.DeviceName
                 </ContextMenuTrigger>
             </td>
@@ -96,5 +96,3 @@
         </tr>
     }
 </table>
-
-<button @onclick=@(() => GC.Collect())>GC.Collect()</button>

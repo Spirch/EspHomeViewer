@@ -119,9 +119,10 @@ public class SseClient : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    if (OnEventReceived != null)
+                    var onEventReceived = OnEventReceived;
+                    if (onEventReceived != null)
                     {
-                        await OnEventReceived.SendAsync(ex, _uri);
+                        await onEventReceived.SendAsync(ex, _uri);
                     }
                     await Task.Delay(_esphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
                 }
@@ -150,9 +151,10 @@ public class SseClient : IDisposable
         }
         catch (Exception ex)
         {
-            if (OnEventReceived != null)
+            var onEventReceived = OnEventReceived;
+            if (onEventReceived != null)
             {
-                await OnEventReceived.SendAsync(ex, _uri);
+                await onEventReceived.SendAsync(ex, _uri);
             }
             result = false;
         }
@@ -191,9 +193,10 @@ public class SseClient : IDisposable
                 throw new SocketException((int)SocketError.HostDown, $"{uri} remote connection closed");
             }
 
-            if (OnEventReceived != null)
+            var onEventReceivedData = OnEventReceived;
+            if (onEventReceivedData != null)
             {
-                await OnEventReceived.SendAsync(data, _uri);
+                await onEventReceivedData.SendAsync(data, _uri);
             }
 
             if (handleNext && data.StartsWith(DATA_JSON, StringComparison.OrdinalIgnoreCase))
@@ -206,9 +209,10 @@ public class SseClient : IDisposable
 
                 json.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-                if (OnEventReceived != null)
+                var onEventReceivedJson = OnEventReceived;
+                if (onEventReceivedJson != null)
                 {
-                    await OnEventReceived.SendAsync(json, _uri);
+                    await onEventReceivedJson.SendAsync(json, _uri);
                 }
             }
 

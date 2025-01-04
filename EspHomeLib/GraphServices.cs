@@ -32,13 +32,16 @@ public class GraphServices
         _serviceProvider = serviceProvider;
     }
 
-    public async Task<byte[]> GraphAsync(string name, int days)
+    public async Task<byte[]> GraphAsync(string name, string friendlyName, int days)
     {
         byte[] result = null;
 
         var EspHomeDb = _serviceProvider.GetRequiredService<EfContext>();
 
-        var meta = await EspHomeDb.RowEntry.AsNoTracking().FirstOrDefaultAsync(x => x.Name == name);
+        var meta = await EspHomeDb.RowEntry
+                                  .AsNoTracking()
+                                  .FirstOrDefaultAsync(x => x.Name == name &&
+                                  (string.IsNullOrEmpty(friendlyName) || x.FriendlyName == friendlyName));
 
         if (meta != null)
         {

@@ -39,8 +39,8 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         InitOption();
 
         subscriber = _processEvent.Subscribe(this);
-        subscriber.EveryRawEvent = this;
-
+        subscriber.OnEvent = this;
+        
         _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
 
@@ -91,15 +91,18 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
             if (!recordData.TryGetValue(rowEntry.Name, out var data))
             {
-                recordData[rowEntry.Name] = new()
+                data = new()
                 {
-                    RowEntry = rowEntry,
                     LastRecordSw = Stopwatch.StartNew(),
-                    RecordDelta = device.Value.StatusInfo.RecordDelta,
-                    RecordThrottle = device.Value.StatusInfo.RecordThrottle,
-                    GroupInfoName = device.Value.StatusInfo.GroupInfoName,
                 };
+
+                recordData[rowEntry.Name] = data;
             }
+
+            data.RowEntry = rowEntry;
+            data.RecordDelta = device.Value.StatusInfo.RecordDelta;
+            data.RecordThrottle = device.Value.StatusInfo.RecordThrottle;
+            data.GroupInfoName = device.Value.StatusInfo.GroupInfoName;
         }
 
         foreach (var group in _esphomeOptions.GroupInfo)
@@ -125,13 +128,16 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
             if (!recordData.TryGetValue(rowEntry.Name, out var data))
             {
-                recordData[rowEntry.Name] = new()
+                data = new()
                 {
-                    RowEntry = rowEntry,
                     LastRecordSw = Stopwatch.StartNew(),
-                    RecordThrottle = group.RecordThrottle,
                 };
+                
+                recordData[rowEntry.Name] = data;
             }
+
+            data.RowEntry = rowEntry;
+            data.RecordThrottle = group.RecordThrottle;
         }
 
         _efContext.SaveChanges();
@@ -272,6 +278,12 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         await Task.CompletedTask;
     }
 
+    public async Task ReceiveDataAsync(Exception exception, Uri uri)
+    {
+        await HandleErrorAsync(exception, uri.ToString());
+        await Task.CompletedTask;
+    }
+
     public async Task HandleErrorAsync(Exception e, string source, string message = null)
     {
         await InsertErrorAsync(new Error()
@@ -284,11 +296,6 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     }
 
     public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
-    {
-        await Task.CompletedTask;
-    }
-
-    public async Task ReceiveDataAsync(Exception exception)
     {
         await Task.CompletedTask;
     }

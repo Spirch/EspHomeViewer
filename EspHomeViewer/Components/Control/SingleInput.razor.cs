@@ -39,7 +39,7 @@ public partial class SingleInput : IEventCanReceive
         await InvokeAsync(StateHasChanged);
     }
 
-    public async Task ReceiveDataAsync(Exception exception)
+    public async Task ReceiveDataAsync(Exception exception, Uri uri)
     {
         await Task.CompletedTask;
     }
