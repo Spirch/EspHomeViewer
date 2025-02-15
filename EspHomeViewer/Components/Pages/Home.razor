@@ -2,49 +2,6 @@
 
 @using EspHomeViewer.Components.Control;
 
-<style>
-    body {
-        background-color: black;
-    }
-
-    table {
-        margin-left: auto;
-        margin-right: auto;
-        font-size: 10px;
-        height: 100%;
-        table-layout: fixed;
-        margin-bottom: 20px
-    }
-
-    td {
-        border: 2px solid #282828;
-        text-align: center;
-        padding: 3px;
-    }
-
-    tr:nth-child(even) {
-        color: white;
-    }
-
-    tr:nth-child(odd) {
-        color: gray;
-    }
-</style>
-
-<script>
-    window.downloadFileFromStream = async (fileName, contentStreamReference) => {
-        const arrayBuffer = await contentStreamReference.arrayBuffer();
-        const blob = new Blob([arrayBuffer]);
-        const url = URL.createObjectURL(blob);
-        const anchorElement = document.createElement('a');
-        anchorElement.href = url;
-        anchorElement.download = fileName ?? '';
-        anchorElement.click();
-        anchorElement.remove();
-        URL.revokeObjectURL(url);
-    }
-</script>
-
 <ContextMenu Id="TotalMenu">
     <MenuItemDay OnMenuGraphClickAsync="@OnMenuGraphClickAsync" />
 </ContextMenu>
@@ -96,3 +53,76 @@
         </tr>
     }
 </table>
+
+<script>
+    window.downloadFileFromStream = async (fileName, contentStreamReference) => {
+        const arrayBuffer = await contentStreamReference.arrayBuffer();
+        const blob = new Blob([arrayBuffer]);
+        const url = URL.createObjectURL(blob);
+        const anchorElement = document.createElement('a');
+        anchorElement.href = url;
+        anchorElement.download = fileName ?? '';
+        anchorElement.click();
+        anchorElement.remove();
+        URL.revokeObjectURL(url);
+    }
+
+
+    window.observeAllTables = () => {
+        function observeParagraph(p) {
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.type === "childList" || mutation.type === "characterData") {
+                        let td = p.closest("td");
+                        if (td) {
+                            td.classList.add("highlight");
+                            setTimeout(() => td.classList.remove("highlight"), 1000);
+                        }
+                    }
+                });
+            });
+            observer.observe(p, { childList: true, subtree: true, characterData: true });
+        }
+
+        function observeTable(table) {
+            if (!table.dataset.observed) { // Prevent duplicate observers
+                table.dataset.observed = "true";
+
+                // Observe existing <p> inside <td>
+                table.querySelectorAll("td p").forEach(observeParagraph);
+
+                // Observe new rows and ensure their <td> p elements are tracked
+                const tableObserver = new MutationObserver(mutations => {
+                    mutations.forEach(mutation => {
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeName === "TR") {
+                                node.querySelectorAll("td p").forEach(observeParagraph);
+                            }
+                        });
+                    });
+                });
+
+                tableObserver.observe(table, { childList: true, subtree: true });
+
+                table.querySelectorAll("td").forEach(td => {
+                    const initialWidth = td.offsetWidth; // Store initial width
+                    td.style.minWidth = initialWidth + "px"; // Prevent shrinking
+
+                    let observer = new ResizeObserver(entries => {
+                        entries.forEach(entry => {
+                            let newWidth = entry.contentRect.width;
+                            if (newWidth > parseFloat(td.style.minWidth)) {
+                                td.style.minWidth = newWidth + "px"; // Update min-width to lock the new expanded width
+                            }
+                        });
+                    });
+
+                    observer.observe(td);
+                });
+            }
+        }
+
+        // Observe all tables initially
+        document.querySelectorAll("table").forEach(observeTable);
+    };
+</script>

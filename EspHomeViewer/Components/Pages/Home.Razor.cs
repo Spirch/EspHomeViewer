@@ -43,6 +43,14 @@ public partial class Home : IProcessEventSubscriber, IDisposable
         subscriber = ProcessEvent.Subscribe(this);
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("observeAllTables");
+        }
+    }
+
     private async Task OnMenuGraphClickAsync(ItemClickEventArgs e)
     {
         string name;
@@ -67,17 +75,18 @@ public partial class Home : IProcessEventSubscriber, IDisposable
             if (!string.IsNullOrEmpty(name))
             {
                 var graph = await GraphServices.GraphAsync(name, data, day);
+                var fileName = string.Join("-", $"For-{day}-day-{data}-at-{DateTime.Now}.png".Split(Path.GetInvalidFileNameChars()));
 
-                await DownloadFileFromStream(graph);
+                await DownloadFileFromStream(graph, fileName);
             }
         }
     }
 
-    private async Task DownloadFileFromStream(byte[] data)
+    private async Task DownloadFileFromStream(byte[] data, string fileName)
     {
         using var fileStream = new MemoryStream(data);
         using var streamRef = new DotNetStreamReference(stream: fileStream);
 
-        await JS.InvokeVoidAsync("downloadFileFromStream", "img.png", streamRef);
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 }

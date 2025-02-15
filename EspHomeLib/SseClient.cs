@@ -7,7 +7,9 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Net.ServerSentEvents;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,9 +37,6 @@ public class SseClient : IDisposable
         PropertyNameCaseInsensitive = true,
     };
 
-    public const int DATA_START = 6; //"data: ".Length;
-    public const string DATA_JSON = "data: {";
-    public const string EVENT_STATE = "event: state";
 
     public SseClient(IHttpClientFactory httpClientFactory, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<SseClient> logger)
     {
@@ -168,55 +167,49 @@ public class SseClient : IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} MonitoringAsync {uri} Start", nameof(SseClient), uri);
 
-        bool handleNext = false;
-
-        using var httpClient = _httpClientFactory.CreateClient();
+        using var httpClient = _httpClientFactory.CreateClient("sseClient");
         using var stream = await httpClient.GetStreamAsync(uri, cancellationTokenSource.Token);
-        using var reader = new StreamReader(stream);
+
+        var parser = SseParser.Create(stream, (type, data) =>
+        {
+            var str = Encoding.UTF8.GetString(data);
+            return str;
+        });
 
         using var timeoutTokenSource = new CancellationTokenSource();
         timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
 
         using var cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, timeoutTokenSource.Token);
 
-        while (!cancellationToken.IsCancellationRequested)
+        await foreach (var item in parser.EnumerateAsync(cancellationToken.Token))
         {
-            string data = await reader.ReadLineAsync(cancellationToken.Token);
-
             if (timeoutTokenSource.IsCancellationRequested)
             {
                 throw new TimeoutException($"{uri} cancellationTokenTimeout");
             }
 
-            if (data == null)
-            {
-                throw new SocketException((int)SocketError.HostDown, $"{uri} remote connection closed");
-            }
-
             var onEventReceivedData = OnEventReceived;
             if (onEventReceivedData != null)
             {
-                await onEventReceivedData.SendAsync(data, _uri);
+                await onEventReceivedData.SendAsync(item.Data, _uri);
             }
 
-            if (handleNext && data.StartsWith(DATA_JSON, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(item.EventType, "state", StringComparison.OrdinalIgnoreCase))
             {
-                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, data);
+                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, item.Data);
 
                 timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
 
-                var json = JsonSerializer.Deserialize<EspEvent>(data.AsSpan(DATA_START), jsonOptions);
+                var espEvent = JsonSerializer.Deserialize<EspEvent>(item.Data, jsonOptions);
 
-                json.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+                espEvent.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
                 var onEventReceivedJson = OnEventReceived;
                 if (onEventReceivedJson != null)
                 {
-                    await onEventReceivedJson.SendAsync(json, _uri);
+                    await onEventReceivedJson.SendAsync(espEvent, _uri);
                 }
             }
-
-            handleNext = string.Equals(data, EVENT_STATE, StringComparison.OrdinalIgnoreCase);
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} MonitoringAsync {uri} End", nameof(SseClient), uri);

@@ -22,16 +22,20 @@ public partial class TotalOutput : IEventCanReceive
     public Subscriber Subscriber { get; set; }
 
     private decimal? Data { get; set; }
+    private DateTime? LastUpdate { get; set; }
 
     protected override void OnParametersSet()
     {
         Data = ProcessEvent.TryGetSumValue(GroupInfo);
+        LastUpdate = DateTime.Now;
+
         Subscriber.EventGroupCanReceives.TryAdd(GroupInfo, this);
     }
 
     public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
     {
         Data = ProcessEvent.TryGetSumValue(GroupInfo);
+        LastUpdate = DateTime.Now;
 
         await InvokeAsync(StateHasChanged);
     }

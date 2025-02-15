@@ -1,0 +1,30 @@
+﻿table {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 10px;
+    height: 100%;
+    table-layout: fixed;
+    margin-bottom: 20px
+}
+
+td {
+    border: 2px solid #282828;
+    text-align: center;
+    padding: 3px;
+    transition: background-color 1s ease-in-out;
+    min-width: 10px; /* Start with a minimum width */
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden;
+}
+
+tr:nth-child(even) {
+    color: white;
+}
+
+tr:nth-child(odd) {
+    color: gray;
+}
+
+.highlight {
+    background-color: #18454E; /* Temporary highlight color */
+}

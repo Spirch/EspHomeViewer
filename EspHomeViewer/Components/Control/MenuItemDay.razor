@@ -4,9 +4,3 @@
 <Item Id="14" OnClick="@OnMenuGraphClickAsync">14 days</Item>
 <Item Id="30" OnClick="@OnMenuGraphClickAsync">30 days</Item>
 <Item Id="0" OnClick="@OnMenuGraphClickAsync">All</Item>
-
-@code
-{
-    [EditorRequired, Parameter]
-    public EventCallback<ItemClickEventArgs> OnMenuGraphClickAsync { get; set; }
-}

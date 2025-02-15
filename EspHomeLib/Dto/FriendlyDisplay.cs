@@ -1,4 +1,6 @@
-﻿namespace EspHomeLib.Dto;
+﻿using System;
+
+namespace EspHomeLib.Dto;
 public class FriendlyDisplay
 {
     public string DeviceName { get; set; }
@@ -6,9 +8,10 @@ public class FriendlyDisplay
     public decimal? Data { get; set; }
     public string Unit { get; set; }
     public string GroupInfo { get; set; }
+    public DateTime LastUpdate { get; set; }
 
     public override string ToString()
     {
-        return $"{DeviceName}: {Name} {Data} {Unit}";
+        return $"{DeviceName}: {Name} {Data} {Unit} {LastUpdate}";
     }
 }

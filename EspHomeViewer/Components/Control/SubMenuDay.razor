@@ -1,17 +1,6 @@
-﻿@using EspHomeLib.Option
-<Item>
+﻿<Item>
     @StatusInfo.Name
     <SubMenu Id="@($"{StatusInfo.Prefix}{{0}}{StatusInfo.Suffix}")">
         <MenuItemDay OnMenuGraphClickAsync="@OnMenuGraphClickAsync" />
     </SubMenu>
 </Item>
-
-@code
-{
-    [EditorRequired, Parameter]
-    public EventCallback<ItemClickEventArgs> OnMenuGraphClickAsync { get; set; }
-
-
-    [EditorRequired, Parameter]
-    public StatusInfoOption StatusInfo { get; set; }
-}

@@ -104,7 +104,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(ProcessEvent));
     }
 
-    public decimal? TryGetData(string deviceName, string name)
+    public FriendlyDisplay TryGetData(string deviceName, string name)
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {deviceName} {name}", nameof(ProcessEvent), deviceName, name);
 
@@ -112,7 +112,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {shortForm}", nameof(ProcessEvent), friendlyDisplay);
 
-        return friendlyDisplay?.Data;
+        return friendlyDisplay;
     }
 
     public decimal? TryGetSumValue(string groupInfo)
@@ -140,6 +140,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
             }
 
             friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
+            friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;
 
             await DispatchDataAsync(espEvent, friendlyDisplay);
         }

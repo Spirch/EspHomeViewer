@@ -25,16 +25,22 @@ public partial class SingleInput : IEventCanReceive
     public Subscriber Subscriber { get; set; }
 
     private decimal? Data { get; set; }
+    private DateTime? LastUpdate { get; set; }
 
     protected override void OnParametersSet()
     {
-        Data = ProcessEvent.TryGetData(DeviceName, Name);
+        var friendlyDisplay = ProcessEvent.TryGetData(DeviceName, Name);
+
+        Data = friendlyDisplay?.Data;
+        LastUpdate = friendlyDisplay?.LastUpdate;
+
         Subscriber.EventSingleCanReceives.TryAdd((DeviceName, Name), this);
     }
 
     public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
     {
-        Data = friendlyDisplay.Data;
+        Data = friendlyDisplay?.Data;
+        LastUpdate = friendlyDisplay?.LastUpdate;
 
         await InvokeAsync(StateHasChanged);
     }
