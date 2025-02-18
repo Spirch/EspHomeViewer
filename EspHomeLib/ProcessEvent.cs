@@ -88,22 +88,6 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(ProcessEvent));
     }
 
-    public void Dispose()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(ProcessEvent));
-
-        foreach (var sub in subscriber)
-        {
-            sub.Value.Dispose();
-        }
-
-        subscriber.Clear();
-
-        _esphomeOptionsDispose?.Dispose();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(ProcessEvent));
-    }
-
     public FriendlyDisplay TryGetData(string deviceName, string name)
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {deviceName} {name}", nameof(ProcessEvent), deviceName, name);
@@ -218,5 +202,21 @@ public class ProcessEvent : IProcessEvent, IDisposable
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived {uri} Stop", nameof(ProcessEvent), uri);
 
         await Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(ProcessEvent));
+
+        foreach (var sub in subscriber)
+        {
+            sub.Value.Dispose();
+        }
+
+        subscriber.Clear();
+
+        _esphomeOptionsDispose?.Dispose();
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(ProcessEvent));
     }
 }

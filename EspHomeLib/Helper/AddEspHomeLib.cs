@@ -45,8 +45,8 @@ public static class AddEspHomeLib
     {
         var dbname = configuration.GetValue<string>("DefaultConnection");
         EfContext.CreateDBIfNotExist(dbname);
-        services.AddHostedService<DatabaseManager>();
         services.AddDbContext<EfContext>(options => options.UseSqlite($"Data Source={dbname}"), ServiceLifetime.Singleton);
+        services.AddHostedService<DatabaseManager>();
 
         return services;
     }

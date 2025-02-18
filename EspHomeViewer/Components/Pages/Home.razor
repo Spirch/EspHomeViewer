@@ -56,6 +56,7 @@
 
 <script>
     window.downloadFileFromStream = async (fileName, contentStreamReference) => {
+
         const arrayBuffer = await contentStreamReference.arrayBuffer();
         const blob = new Blob([arrayBuffer]);
         const url = URL.createObjectURL(blob);
@@ -65,64 +66,48 @@
         anchorElement.click();
         anchorElement.remove();
         URL.revokeObjectURL(url);
+
     }
 
-
     window.observeAllTables = () => {
+
+        const observedElements = new WeakMap();
+
         function observeParagraph(p) {
+            if (observedElements.has(p)) return;
+            observedElements.set(p, true);
+
             const observer = new MutationObserver(mutations => {
-                mutations.forEach(mutation => {
-                    if (mutation.type === "childList" || mutation.type === "characterData") {
-                        let td = p.closest("td");
-                        if (td) {
+                for (const mutation of mutations) {
+                    if (mutation.type === "characterData") {
+                        const td = p.closest("td");
+
+                        if (td && !observedElements.has(td)) {
+                            observedElements.set(td, true);
+
                             td.classList.add("highlight");
-                            setTimeout(() => td.classList.remove("highlight"), 1000);
+                            setTimeout(() => requestAnimationFrame(() => {
+                                td.classList.remove("highlight");
+                                observedElements.delete(td); // Clean up
+                            }), 1000);
                         }
                     }
-                });
+                }
             });
-            observer.observe(p, { childList: true, subtree: true, characterData: true });
+
+            observer.observe(p, { subtree: true, characterData: true });
         }
 
         function observeTable(table) {
-            if (!table.dataset.observed) { // Prevent duplicate observers
-                table.dataset.observed = "true";
+            if (observedElements.has(table)) return;
+            observedElements.set(table, true);
 
-                // Observe existing <p> inside <td>
-                table.querySelectorAll("td p").forEach(observeParagraph);
-
-                // Observe new rows and ensure their <td> p elements are tracked
-                const tableObserver = new MutationObserver(mutations => {
-                    mutations.forEach(mutation => {
-                        mutation.addedNodes.forEach(node => {
-                            if (node.nodeName === "TR") {
-                                node.querySelectorAll("td p").forEach(observeParagraph);
-                            }
-                        });
-                    });
-                });
-
-                tableObserver.observe(table, { childList: true, subtree: true });
-
-                table.querySelectorAll("td").forEach(td => {
-                    const initialWidth = td.offsetWidth; // Store initial width
-                    td.style.minWidth = initialWidth + "px"; // Prevent shrinking
-
-                    let observer = new ResizeObserver(entries => {
-                        entries.forEach(entry => {
-                            let newWidth = entry.contentRect.width;
-                            if (newWidth > parseFloat(td.style.minWidth)) {
-                                td.style.minWidth = newWidth + "px"; // Update min-width to lock the new expanded width
-                            }
-                        });
-                    });
-
-                    observer.observe(td);
-                });
-            }
+            table.querySelectorAll("p").forEach(observeParagraph);
         }
 
-        // Observe all tables initially
         document.querySelectorAll("table").forEach(observeTable);
+
     };
+
+
 </script>

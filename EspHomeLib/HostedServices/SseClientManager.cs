@@ -44,54 +44,6 @@ public class SseClientManager : IHostedService, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClientManager));
     }
 
-    public void Dispose()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(SseClientManager));
-
-        foreach (var client in _sseClients.Values)
-        {
-            DisposeClient(client);
-        }
-
-        _sseClients.Clear();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(SseClientManager));
-    }
-
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
-
-        InitializeClients(_esphomeOptions.Uri);
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(SseClientManager));
-
-        return Task.CompletedTask;
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(SseClientManager));
-
-        Dispose();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(SseClientManager));
-
-        return Task.CompletedTask;
-    }
-
-    private void InitializeClients(IEnumerable<Uri> uris)
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitializeClients Start", nameof(SseClientManager));
-
-        foreach (var uri in uris)
-        {
-            AddClient(uri);
-        }
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitializeClients End", nameof(SseClientManager));
-    }
-
     private void OnConfigChange(EsphomeOptions newConfig)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnConfigChange Start", nameof(SseClientManager));
@@ -112,6 +64,29 @@ public class SseClientManager : IHostedService, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnConfigChange End", nameof(SseClientManager));
     }
 
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
+
+        InitializeClients(_esphomeOptions.Uri);
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(SseClientManager));
+
+        return Task.CompletedTask;
+    }
+
+    private void InitializeClients(IEnumerable<Uri> uris)
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitializeClients Start", nameof(SseClientManager));
+
+        foreach (var uri in uris)
+        {
+            AddClient(uri);
+        }
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitializeClients End", nameof(SseClientManager));
+    }
+
     private void AddClient(Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} Start", nameof(SseClientManager), uri);
@@ -125,13 +100,15 @@ public class SseClientManager : IHostedService, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);
     }
 
-    private void DisposeClient(SseClient client)
+    public Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} Start", nameof(SseClientManager), client);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(SseClientManager));
 
-        client.Dispose();
+        Dispose();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} End", nameof(SseClientManager), client);
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(SseClientManager));
+
+        return Task.CompletedTask;
     }
 
     private void RemoveClient(Uri uri)
@@ -144,5 +121,30 @@ public class SseClientManager : IHostedService, IDisposable
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} RemoveClient {uri} End", nameof(SseClientManager), uri);
+    }
+
+    private void DisposeClient(SseClient client)
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} Start", nameof(SseClientManager), client);
+
+        client.Dispose();
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} End", nameof(SseClientManager), client);
+    }
+
+    public void Dispose()
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(SseClientManager));
+
+        _esphomeOptionsDispose.Dispose();
+
+        foreach (var client in _sseClients.Values)
+        {
+            DisposeClient(client);
+        }
+
+        _sseClients.Clear();
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(SseClientManager));
     }
 }

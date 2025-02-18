@@ -144,16 +144,6 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         _efContext.ChangeTracker.Clear();
     }
 
-    public void Dispose()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
-
-        _processEvent.Unsubscribe(this);
-        _esphomeOptionsDispose?.Dispose();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));
-    }
-
     public Task StartAsync(CancellationToken cancellationToken)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(DatabaseManager));
@@ -303,5 +293,15 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     public async Task ReceiveDataAsync(string rawMessage)
     {
         await Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
+
+        _processEvent.Unsubscribe(this);
+        _esphomeOptionsDispose?.Dispose();
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));
     }
 }

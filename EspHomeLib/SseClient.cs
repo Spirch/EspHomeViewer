@@ -4,11 +4,9 @@ using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.ServerSentEvents;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -53,32 +51,6 @@ public class SseClient : IDisposable
         _esphomeOptions = currentValue;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClient));
-    }
-
-    public void Dispose()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
-
-        cancellationTokenSource?.Cancel();
-        _semaphore.Wait(); //wait until the cancelled is completed
-
-        _semaphore.Dispose();
-        cancellationTokenSource?.Dispose();
-        cancellationTokenSource = null;
-        _esphomeOptionsDispose?.Dispose();
-        OnEventReceived = null;
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} End", nameof(SseClient), _uri);
-    }
-
-    public override string ToString()
-    {
-        if (_uri == null)
-        {
-            return base.ToString();
-        }
-
-        return $"{nameof(SseClient)} {_uri}";
     }
 
     public void Start(Uri uri)
@@ -176,6 +148,7 @@ public class SseClient : IDisposable
             return str;
         });
 
+        //todo: remove if not useful in the future
         using var timeoutTokenSource = new CancellationTokenSource();
         timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
 
@@ -213,5 +186,31 @@ public class SseClient : IDisposable
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} MonitoringAsync {uri} End", nameof(SseClient), uri);
+    }
+
+    public override string ToString()
+    {
+        if (_uri == null)
+        {
+            return base.ToString();
+        }
+
+        return $"{nameof(SseClient)} {_uri}";
+    }
+
+    public void Dispose()
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
+
+        cancellationTokenSource?.Cancel();
+        _semaphore.Wait(); //wait until the cancelled is completed
+
+        _semaphore.Dispose();
+        cancellationTokenSource?.Dispose();
+        cancellationTokenSource = null;
+        _esphomeOptionsDispose?.Dispose();
+        OnEventReceived = null;
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} End", nameof(SseClient), _uri);
     }
 }

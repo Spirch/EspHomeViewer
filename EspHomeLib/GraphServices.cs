@@ -1,15 +1,13 @@
 ﻿using EspHomeLib.Database;
-using Microsoft.Extensions.DependencyInjection;
-using ScottPlot.TickGenerators.TimeUnits;
-using ScottPlot.TickGenerators;
-using ScottPlot;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using ScottPlot;
+using ScottPlot.AxisPanels;
+using ScottPlot.TickGenerators;
+using ScottPlot.TickGenerators.TimeUnits;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace EspHomeLib;
 
@@ -56,29 +54,7 @@ public class GraphServices
             var plotData = myPlot.Add.ScatterPoints(xs, ys);
 
             var interval = myPlot.Axes.DateTimeTicksBottom();
-            switch (days)
-            {
-                case Key.Graph1DayValue:
-                    interval.TickGenerator = new DateTimeFixedInterval(new Minute(), 15);
-                    break;
-                case Key.Graph3DaysValue:
-                    interval.TickGenerator = new DateTimeFixedInterval(new Minute(), 30);
-                    break;
-                case Key.Graph7DaysValue:
-                    interval.TickGenerator = new DateTimeFixedInterval(new Minute(), 90);
-                    break;
-                case Key.Graph14DaysValue:
-                    interval.TickGenerator = new DateTimeFixedInterval(new Hour(), 3);
-                    break;
-                case Key.Graph30DaysValue:
-                    interval.TickGenerator = new DateTimeFixedInterval(new Hour(), 6);
-                    break;
-                case Key.GraphAllValue:
-                    interval.TickGenerator = new DateTimeFixedInterval(new Hour(), 12);
-                    break;
-                default:
-                    break;
-            }
+            SetTickGenerator(days, interval);
 
             plotData.LegendText = $"{meta.FriendlyName} - {meta.Unit}";
             myPlot.ShowLegend();
@@ -92,5 +68,32 @@ public class GraphServices
         }
 
         return result;
+    }
+
+    private static void SetTickGenerator(int days, DateTimeXAxis interval)
+    {
+        switch (days)
+        {
+            case Key.Graph1DayValue:
+                interval.TickGenerator = new DateTimeFixedInterval(new Minute(), 15);
+                break;
+            case Key.Graph3DaysValue:
+                interval.TickGenerator = new DateTimeFixedInterval(new Minute(), 30);
+                break;
+            case Key.Graph7DaysValue:
+                interval.TickGenerator = new DateTimeFixedInterval(new Minute(), 90);
+                break;
+            case Key.Graph14DaysValue:
+                interval.TickGenerator = new DateTimeFixedInterval(new Hour(), 3);
+                break;
+            case Key.Graph30DaysValue:
+                interval.TickGenerator = new DateTimeFixedInterval(new Hour(), 6);
+                break;
+            case Key.GraphAllValue:
+                interval.TickGenerator = new DateTimeFixedInterval(new Hour(), 12);
+                break;
+            default:
+                break;
+        }
     }
 }
