@@ -23,28 +23,26 @@ public static class Key
 
 public class GraphServices
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly EfContext _efContext;
 
-    public GraphServices(IServiceProvider serviceProvider)
+    public GraphServices(EfContext efContext)
     {
-        _serviceProvider = serviceProvider;
+        _efContext = efContext;
     }
 
     public async Task<byte[]> GraphAsync(string name, string friendlyName, int days)
     {
         byte[] result = null;
 
-        var EspHomeDb = _serviceProvider.GetRequiredService<EfContext>();
-
-        var meta = await EspHomeDb.RowEntry
-                                  .AsNoTracking()
-                                  .FirstOrDefaultAsync(x => x.Name == name &&
-                                  (string.IsNullOrEmpty(friendlyName) || x.FriendlyName == friendlyName));
+        var meta = await _efContext.RowEntry
+                                   .AsNoTracking()
+                                   .FirstOrDefaultAsync(x => x.Name == name &&
+                                   (string.IsNullOrEmpty(friendlyName) || x.FriendlyName == friendlyName));
 
         if (meta != null)
         {
             var unixFilter = days > 0 ? DateTimeOffset.Now.AddDays(-days).ToUnixTimeSeconds() : 0;
-            var data = await EspHomeDb.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId).AsNoTracking().ToListAsync();
+            var data = await _efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId).AsNoTracking().ToListAsync();
 
             var xs = data.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.UnixTime).LocalDateTime).ToList();
             var ys = data.Select(x => x.Data).ToList();

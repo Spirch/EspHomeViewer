@@ -13,6 +13,7 @@ public static class AddEspHomeLib
     public static IServiceCollection AddSseManager(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<EsphomeOptions>(configuration.GetSection("EsphomeOptions"));
+
         services.AddHttpClient("sseClient").UseSocketsHttpHandler((handler, _) =>
             handler.ConnectCallback = async (ctx, ct) =>
             {
@@ -45,7 +46,7 @@ public static class AddEspHomeLib
     {
         var dbname = configuration.GetValue<string>("DefaultConnection");
         EfContext.CreateDBIfNotExist(dbname);
-        services.AddDbContext<EfContext>(options => options.UseSqlite($"Data Source={dbname}"), ServiceLifetime.Singleton);
+        services.AddDbContext<EfContext>(options => options.UseSqlite($"Data Source={dbname}"));
         services.AddHostedService<DatabaseManager>();
 
         return services;
@@ -53,7 +54,7 @@ public static class AddEspHomeLib
 
     public static IServiceCollection AddGraphServices(this IServiceCollection services)
     {
-        services.AddSingleton<GraphServices>();
+        services.AddTransient<GraphServices>();
 
         return services;
     }

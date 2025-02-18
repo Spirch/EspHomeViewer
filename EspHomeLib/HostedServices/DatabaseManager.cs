@@ -3,6 +3,7 @@ using EspHomeLib.Database.Model;
 using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using EspHomeLib.Option;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,7 +22,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
     private readonly ILogger<SseClient> _logger;
     private readonly ProcessEvent _processEvent;
-    private readonly EfContext _efContext;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly BlockingCollection<IDbItem> Queue = new();
 
     private readonly ConcurrentDictionary<string, RecordData> recordData = new();
@@ -29,9 +30,12 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     private readonly Subscriber subscriber;
     private Task runningInstance;
 
-    public DatabaseManager(ProcessEvent processEvent, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, EfContext efContext, ILogger<SseClient> logger)
+    public DatabaseManager(ProcessEvent processEvent, 
+                           IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                           IServiceScopeFactory serviceScopeFactory,
+                           ILogger<SseClient> logger)
     {
-        _efContext = efContext;
+        _serviceScopeFactory = serviceScopeFactory;
         _processEvent = processEvent;
         _logger = logger;
         _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
@@ -66,10 +70,13 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
     private void InitRecordData()
     {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+
         foreach (var device in _processEvent.DeviceInfo)
         {
-            RowEntry rowEntry = _efContext.RowEntry
-                                          .FirstOrDefault(x => x.Name == device.Key &&
+            RowEntry rowEntry = efContext.RowEntry
+                                         .FirstOrDefault(x => x.Name == device.Key &&
                                                                x.FriendlyName == device.Value.DeviceInfo.DeviceName);
 
             if (rowEntry == null)
@@ -81,7 +88,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
                     Unit = device.Value.StatusInfo.Unit,
                 };
 
-                _efContext.Add(rowEntry);
+                efContext.Add(rowEntry);
             }
             else
             {
@@ -107,7 +114,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
         foreach (var group in _esphomeOptions.GroupInfo)
         {
-            RowEntry rowEntry = _efContext.RowEntry.FirstOrDefault(x => x.Name == group.Id);
+            RowEntry rowEntry = efContext.RowEntry.FirstOrDefault(x => x.Name == group.Id);
 
             if (rowEntry == null)
             {
@@ -118,7 +125,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
                     Unit = group.Unit,
                 };
 
-                _efContext.Add(rowEntry);
+                efContext.Add(rowEntry);
             }
             else
             {
@@ -140,8 +147,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
             data.RecordThrottle = group.RecordThrottle;
         }
 
-        _efContext.SaveChanges();
-        _efContext.ChangeTracker.Clear();
+        efContext.SaveChanges();
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -176,11 +182,14 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
                 {
                     try
                     {
+                        using var scope = _serviceScopeFactory.CreateScope();
+                        using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+
                         foreach (var dbItem in Queue.GetConsumingEnumerable())
                         {
-                            await _efContext.AddAsync(dbItem);
-                            await _efContext.SaveChangesAsync();
-                            _efContext.ChangeTracker.Clear();
+                            await efContext.AddAsync(dbItem);
+                            await efContext.SaveChangesAsync();
+                            efContext.ChangeTracker.Clear();
                         }
                     }
                     catch (Exception e)
