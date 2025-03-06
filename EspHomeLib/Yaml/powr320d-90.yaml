@@ -1,0 +1,5 @@
+substitutions:
+  devicename: powr320d-90
+  devicename_no_dashes: powr320d_90
+
+<<: !include common/.powr320d.yaml
