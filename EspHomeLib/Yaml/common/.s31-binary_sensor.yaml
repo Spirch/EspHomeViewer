@@ -15,6 +15,28 @@ binary_sensor:
     on_press:
       - lambda: |-
           id(s31_button).trigger("pressed");
+      - script.execute: my_script
   - platform: status
     name: "${devicename} Status"
     id: "${devicename_no_dashes}_status"
+    
+light:
+  - platform: status_led
+    id: stat_led
+    name: "Switch state"
+    pin:
+      number: GPIO13
+      inverted: yes
+      
+script:
+  - id: my_script
+    then:
+      - light.turn_off: stat_led
+      - delay: 1s
+      - repeat:
+          count: 60
+          then:
+            - light.turn_on: stat_led
+            - delay: 2s
+            - light.turn_off: stat_led
+            - delay: 1s   

@@ -28,10 +28,10 @@ switch:
     internal: true
     restore_mode: ALWAYS_ON
 
-status_led:
-  pin:
-    number: GPIO13
-    inverted: True
+#status_led:
+#  pin:
+#    number: GPIO13
+#    inverted: True
 
 <<: !include .ota.yaml
 <<: !include .sensor.yaml

@@ -67,6 +67,7 @@ sensor:
     power_factor:
       name: "${devicename} Power Factor"
       id: "${devicename_no_dashes}_power_factor"
+      unit_of_measurement: PF
       accuracy_decimals: 2
       filters:
         - filter_out: nan
