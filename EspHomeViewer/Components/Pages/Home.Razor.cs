@@ -31,15 +31,18 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     [Inject] 
     IJSRuntime JS { get; set; }
 
+    private IDisposable _esphomeOptionsDispose;
     private Subscriber subscriber;
 
     public void Dispose()
     {
+        _esphomeOptionsDispose?.Dispose();
         ProcessEvent.Unsubscribe(this);
     }
 
     protected override void OnParametersSet()
     {
+        _esphomeOptionsDispose = EsphomeOptions.OnChange(OnOptionChanged);
         subscriber = ProcessEvent.Subscribe(this);
     }
 
@@ -49,6 +52,11 @@ public partial class Home : IProcessEventSubscriber, IDisposable
         {
             await JS.InvokeVoidAsync("observeAllTables");
         }
+    }
+
+    private void OnOptionChanged(EsphomeOptions currentValue)
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task OnMenuGraphClickAsync(ItemClickEventArgs e)

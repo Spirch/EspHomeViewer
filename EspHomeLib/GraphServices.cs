@@ -42,7 +42,9 @@ public class GraphServices
         if (meta != null)
         {
             var unixFilter = days > 0 ? DateTimeOffset.Now.AddDays(-days).ToUnixTimeSeconds() : 0;
-            var data = await _efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId).AsNoTracking().ToListAsync();
+            var data = await _efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId)
+                                             .Select(x => new { x.Data, x.UnixTime, })
+                                             .ToListAsync();
 
             var xs = data.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.UnixTime).LocalDateTime).ToList();
             var ys = data.Select(x => x.Data).ToList();

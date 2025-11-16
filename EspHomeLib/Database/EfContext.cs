@@ -39,6 +39,9 @@ public sealed class EfContext : DbContext
             x.HasOne(d => d.EspHomeId)
              .WithMany(dm => dm.Event)
              .HasForeignKey(dkey => dkey.RowEntryId);
+
+            x.HasIndex(p => new { p.RowEntryId, p.UnixTime })
+             .IsDescending(false, true);
         });
 
         modelBuilder.Entity<RowEntry>(x =>

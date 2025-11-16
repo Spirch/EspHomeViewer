@@ -11,25 +11,19 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace EspHomeLib;
-public class ProcessEvent : IProcessEvent, IDisposable
+public class ProcessEvent : IDisposable
 {
     private readonly IDisposable _esphomeOptionsDispose;
     private EsphomeOptions _esphomeOptions;
 
     private readonly ILogger<ProcessEvent> _logger;
 
-    private readonly ConcurrentDictionary<(string, string), FriendlyDisplay> dataDisplay = new();
-
     private readonly ConcurrentDictionary<IProcessEventSubscriber, Subscriber> subscriber = new();
-
-    public FrozenDictionary<string, ProcessOption> DeviceInfo { get; set; }
 
     public ProcessEvent(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<ProcessEvent> logger)
     {
         _logger = logger;
         _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
-
-        InitOption();
 
         _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
     }
@@ -61,38 +55,25 @@ public class ProcessEvent : IProcessEvent, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(ProcessEvent));
 
+        foreach(var values in _esphomeOptions.DataDisplay)
+        {
+            if(currentValue.DataDisplay.TryGetValue(values.Key, out var value))
+            {
+                value.Data = values.Value.Data;
+                value.LastUpdate = values.Value.LastUpdate;
+            }
+        }
+
         _esphomeOptions = currentValue;
 
-        InitOption();
-
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(ProcessEvent));
-    }
-
-    private void InitOption()
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(ProcessEvent));
-
-        DeviceInfo = (from deviceInfo in _esphomeOptions.DeviceInfo
-                      from statusInfo in _esphomeOptions.StatusInfo
-                      select new
-                      {
-                          key = string.Concat(statusInfo.Prefix, deviceInfo.Name, statusInfo.Suffix),
-                          processOption = new ProcessOption()
-                          {
-                              DeviceInfo = deviceInfo,
-                              StatusInfo = statusInfo,
-                              GroupInfo = _esphomeOptions.GroupInfo.FirstOrDefault(x => string.Equals(statusInfo.GroupInfoName, x.Name, StringComparison.OrdinalIgnoreCase))
-                          }
-                      }).ToFrozenDictionary(k => k.key, v => v.processOption);
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(ProcessEvent));
     }
 
     public FriendlyDisplay TryGetData(string deviceName, string name)
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {deviceName} {name}", nameof(ProcessEvent), deviceName, name);
 
-        dataDisplay.TryGetValue((deviceName, name), out var friendlyDisplay);
+        _esphomeOptions.DataDisplay.TryGetValue((deviceName, name), out var friendlyDisplay);
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {shortForm}", nameof(ProcessEvent), friendlyDisplay);
 
@@ -103,7 +84,7 @@ public class ProcessEvent : IProcessEvent, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetSumValue {groupInfo}", nameof(ProcessEvent), groupInfo);
 
-        var sumValue = dataDisplay.Values
+        var sumValue = _esphomeOptions.DataDisplay.Values
                        .Where(x => string.Equals(x.GroupInfo, groupInfo, StringComparison.OrdinalIgnoreCase))
                        .Sum(x => x.Data);
 
@@ -116,35 +97,18 @@ public class ProcessEvent : IProcessEvent, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} Start", nameof(ProcessEvent), uri);
 
-        if (DeviceInfo.TryGetValue(espEvent.Id, out var processOption))
+        if (_esphomeOptions.MergeInfo.TryGetValue(espEvent.Id, out var processOption))
         {
-            if (!dataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
+            if (_esphomeOptions.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
             {
-                friendlyDisplay = AddNewFriendlyDisplay(processOption);
+                friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
+                friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;
+
+                await DispatchDataAsync(espEvent, friendlyDisplay);
             }
-
-            friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
-            friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;
-
-            await DispatchDataAsync(espEvent, friendlyDisplay);
         }
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} End", nameof(ProcessEvent), uri);
-    }
-
-    private FriendlyDisplay AddNewFriendlyDisplay(ProcessOption processOption)
-    {
-        FriendlyDisplay friendlyDisplay = new()
-        {
-            DeviceName = processOption.DeviceInfo.DeviceName,
-            Name = processOption.StatusInfo.Name,
-            Unit = processOption.StatusInfo.Unit,
-            GroupInfo = processOption.StatusInfo.GroupInfoName,
-        };
-
-        dataDisplay[(friendlyDisplay.DeviceName, friendlyDisplay.Name)] = friendlyDisplay;
-
-        return friendlyDisplay;
     }
 
     private async Task DispatchDataAsync(EspEvent espEvent, FriendlyDisplay friendlyDisplay)

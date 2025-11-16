@@ -3,6 +3,7 @@ using EspHomeLib.Database.Model;
 using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using EspHomeLib.Option;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -73,7 +74,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         using var scope = _serviceScopeFactory.CreateScope();
         using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
 
-        foreach (var device in _processEvent.DeviceInfo)
+        foreach (var device in _esphomeOptions.MergeInfo)
         {
             RowEntry rowEntry = efContext.RowEntry
                                          .FirstOrDefault(x => x.Name == device.Key &&
@@ -174,6 +175,8 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
     private async Task RunAndProcessAsync()
     {
+        var swCleanup = Stopwatch.StartNew();
+
         while (!Queue.IsCompleted)
         {
             try
@@ -190,6 +193,12 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
                             await efContext.AddAsync(dbItem);
                             await efContext.SaveChangesAsync();
                             efContext.ChangeTracker.Clear();
+
+                            if(swCleanup.Elapsed.TotalHours > 24)
+                            {
+                                await efContext.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+                                swCleanup.Restart();
+                            }
                         }
                     }
                     catch (Exception e)
@@ -245,7 +254,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
     private async Task HandleGroupEvent(EspEvent espEvent)
     {
-        if (_processEvent.DeviceInfo.TryGetValue(espEvent.Id, out var processOption) &&
+        if (_esphomeOptions.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
             processOption.GroupInfo != null)
         {
             var newEvent = new Event()

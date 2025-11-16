@@ -15,34 +15,39 @@ using System.Threading.Tasks;
 namespace EspHomeLib;
 public class SseClient : IDisposable
 {
-    private readonly IDisposable _esphomeOptionsDispose;
-    private EsphomeOptions _esphomeOptions;
 
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IDisposable _esphomeOptionsDispose;
+    private readonly ProcessEvent _processEvent;
     private readonly ILogger<SseClient> _logger;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+    private EsphomeOptions _esphomeOptions;
+
     private Uri _uri;
 
     private CancellationTokenSource cancellationTokenSource;
 
-    public IProcessEvent OnEventReceived { get; set; }
-
     private Task runningInstance;
 
-    private readonly JsonSerializerOptions jsonOptions = new()
+    private static readonly JsonSerializerOptions jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
-
-    public SseClient(IHttpClientFactory httpClientFactory, IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<SseClient> logger)
+    public SseClient(IHttpClientFactory httpClientFactory,
+                     IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                     ProcessEvent processEvent,
+                     ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
 
         _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
+
+        _processEvent = processEvent;
     }
     private void OnOptionChanged(EsphomeOptions currentValue)
     {
@@ -90,7 +95,7 @@ public class SseClient : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    var onEventReceived = OnEventReceived;
+                    var onEventReceived = _processEvent;
                     if (onEventReceived != null)
                     {
                         await onEventReceived.SendAsync(ex, _uri);
@@ -122,7 +127,7 @@ public class SseClient : IDisposable
         }
         catch (Exception ex)
         {
-            var onEventReceived = OnEventReceived;
+            var onEventReceived = _processEvent;
             if (onEventReceived != null)
             {
                 await onEventReceived.SendAsync(ex, _uri);
@@ -161,7 +166,7 @@ public class SseClient : IDisposable
                 throw new TimeoutException($"{uri} cancellationTokenTimeout");
             }
 
-            var onEventReceivedData = OnEventReceived;
+            var onEventReceivedData = _processEvent;
             if (onEventReceivedData != null)
             {
                 await onEventReceivedData.SendAsync(item.Data, _uri);
@@ -177,7 +182,7 @@ public class SseClient : IDisposable
 
                 espEvent.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-                var onEventReceivedJson = OnEventReceived;
+                var onEventReceivedJson = _processEvent;
                 if (onEventReceivedJson != null)
                 {
                     await onEventReceivedJson.SendAsync(espEvent, _uri);
@@ -209,7 +214,6 @@ public class SseClient : IDisposable
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
         _esphomeOptionsDispose?.Dispose();
-        OnEventReceived = null;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} End", nameof(SseClient), _uri);
     }

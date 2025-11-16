@@ -19,15 +19,12 @@ public class SseClientManager : IHostedService, IDisposable
     private readonly IServiceProvider _serviceProvider;
     private readonly ConcurrentDictionary<Uri, SseClient> _sseClients = new();
     private readonly ILogger<SseClientManager> _logger;
-    private readonly ProcessEvent _processEvent;
 
-    public SseClientManager(IServiceProvider serviceProvider,
-                            ILogger<SseClientManager> logger,
-                            ProcessEvent processEvent,
-                            IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor)
+    public SseClientManager(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                            IServiceProvider serviceProvider,
+                            ILogger<SseClientManager> logger)
     {
         _serviceProvider = serviceProvider;
-        _processEvent = processEvent;
         _logger = logger;
         _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
 
@@ -94,7 +91,6 @@ public class SseClientManager : IHostedService, IDisposable
         var sseClient = _serviceProvider.GetRequiredService<SseClient>();
         _sseClients[uri] = sseClient;
 
-        sseClient.OnEventReceived = _processEvent;
         sseClient.Start(uri);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);
