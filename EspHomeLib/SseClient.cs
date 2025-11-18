@@ -65,33 +65,33 @@ public class SseClient : IDisposable
         if (cancellationTokenSource == null)
         {
             cancellationTokenSource = new CancellationTokenSource();
-            runningInstance = StartMonitoringAsync(uri);
             _uri = uri;
+
+            runningInstance = StartMonitoringAsync();
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Start {uri} End", nameof(SseClient), uri);
     }
 
-    private async Task StartMonitoringAsync(Uri uri)
+    private async Task StartMonitoringAsync()
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartMonitoringAsync {uri} Start", nameof(SseClient), uri);
-
         try
         {
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartMonitoringAsync {uri} Start", nameof(SseClient), _uri);
+
             _semaphore.Wait(cancellationTokenSource.Token);
 
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
-                if (!await PingAsync(uri.Host))
+                if (!await PingAsync(_uri.Host))
                 {
-                    //OnPingFailed?.Invoke("returned false");
                     await Task.Delay(_esphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
                     continue;
                 }
 
                 try
                 {
-                    await MonitoringAsync(uri);
+                    await MonitoringAsync(_uri);
                 }
                 catch (Exception ex)
                 {
@@ -107,18 +107,18 @@ public class SseClient : IDisposable
         finally
         {
             _semaphore.Release();
-            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartMonitoringAsync {uri} End", nameof(SseClient), uri);
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartMonitoringAsync {uri} End", nameof(SseClient), _uri);
         }
     }
 
     private async Task<bool> PingAsync(string host)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} PingAsync {host} Start", nameof(SseClient), host);
-
         bool result;
 
         try
         {
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} PingAsync {host} Start", nameof(SseClient), host);
+
             using var ping = new Ping();
 
             var pingReply = await ping.SendPingAsync(host, TimeSpan.FromSeconds(_esphomeOptions.SseClient.PingTimeout), cancellationToken: cancellationTokenSource.Token);
@@ -134,8 +134,10 @@ public class SseClient : IDisposable
             }
             result = false;
         }
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} PingAsync {host} End", nameof(SseClient), host);
+        finally
+        {
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} PingAsync {host} End", nameof(SseClient), host);
+        }
 
         return result;
     }

@@ -15,7 +15,6 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="ScottPlot" Version="5.1.57" />
-      <PackageReference Include="System.Net.ServerSentEvents" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
