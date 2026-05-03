@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+VisualStudioVersion = 18.0.11205.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EspHomeViewer", "EspHomeViewer\EspHomeViewer.csproj", "{2807581A-655E-4E70-B28E-E3E98A9403BF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EspHomeLib", "EspHomeLib\EspHomeLib.csproj", "{BDE77274-1C61-40F2-A1E3-2B6D67E246A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EcoWittLib", "EcoWittLib\EcoWittLib.csproj", "{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{BDE77274-1C61-40F2-A1E3-2B6D67E246A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDE77274-1C61-40F2-A1E3-2B6D67E246A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDE77274-1C61-40F2-A1E3-2B6D67E246A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

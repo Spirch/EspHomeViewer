@@ -1,0 +1,89 @@
+﻿@page "/EcoWitt"
+
+<table>
+    <thead>
+        <tr><th colspan="2">Indoor</th><th colspan="2">General Info</th><th colspan="2">Outdoor</th><th colspan="2">Rain</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Temperature</td>
+            <td><p>@TryReadWeatherData("tempinc")</p></td>
+            <td>Date Time</td>
+            <td><p>@TryReadWeatherData("datelocal")</p></td>
+            <td>Temperature</td>
+            <td><p>@TryReadWeatherData("tempc")</p></td>
+            <td>Current Rain</td>
+            <td><p>@TryReadWeatherData("rrain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td>Humididy</td>
+            <td><p>@TryReadWeatherData("humidityin")</p></td>
+            <td>Runtime</td>
+            <td><p>@TryReadWeatherData("runtime")</p></td>
+            <td>Humididy</td>
+            <td><p>@TryReadWeatherData("humidity")</p></td>
+            <td>Event Rain</td>
+            <td><p>@TryReadWeatherData("erain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td>WS90 Capacitor</td>
+            <td><p>@TryReadWeatherData("ws90cap_volt")</p></td>
+            <td>Wind Direction</td>
+            <td><p>@TryReadWeatherData("winddircardinal")</p></td>
+            <td>Hourly Rain</td>
+            <td><p>@TryReadWeatherData("hrain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td>AA Batteries</td>
+            <td><p>@TryReadWeatherData("wh90batt")</p></td>
+            <td>Wind Speed</td>
+            <td><p>@TryReadWeatherData("windspeedkmh")</p></td>
+            <td>Daily Rain</td>
+            <td><p>@TryReadWeatherData("drain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td colspan="2" style="border: none"></td>
+            <td>Wind Gust</td>
+            <td><p>@TryReadWeatherData("windgustkmh")</p></td>
+            <td>Weekly Rain</td>
+            <td><p>@TryReadWeatherData("wrain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td colspan="2" style="border: none"></td>
+            <td>Wind Max</td>
+            <td><p>@TryReadWeatherData("maxdailykmh")</p></td>
+            <td>Monthly Rain</td>
+            <td><p>@TryReadWeatherData("mrain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td colspan="2" style="border: none"></td>
+            <td>Solar Radiation</td>
+            <td><p>@TryReadWeatherData("solarradiation")</p></td>
+            <td>Yearly Rain</td>
+            <td><p>@TryReadWeatherData("yrain_piezomm")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td colspan="2" style="border: none"></td>
+            <td>UV</td>
+            <td><p>@TryReadWeatherData("uv")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td colspan="2" style="border: none"></td>
+            <td>Barometer Absolute</td>
+            <td><p>@TryReadWeatherData("baromabshpa")</p></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none"></td>
+            <td colspan="2" style="border: none"></td>
+            <td>Barometer Relative</td>
+            <td><p>@TryReadWeatherData("baromrelhpa")</p></td>
+        </tr>
+    </tbody>
+</table>

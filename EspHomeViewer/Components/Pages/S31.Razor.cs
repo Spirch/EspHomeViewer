@@ -10,10 +10,11 @@ using System.IO;
 using System.Threading.Tasks;
 using BlazorContextMenu;
 using Microsoft.JSInterop;
+using System.Collections.Generic;
 
 namespace EspHomeViewer.Components.Pages;
 
-public partial class Home : IProcessEventSubscriber, IDisposable
+public partial class S31 : IProcessEventSubscriber, IDataCanReceive, IDisposable
 {
     [Inject]
     private IOptionsMonitor<EsphomeOptions> EsphomeOptions { get; set; }
@@ -22,7 +23,7 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     private ProcessEvent ProcessEvent { get; set; }
 
     [Inject]
-    private ILogger<Home> Logger { get; set; }
+    private ILogger<S31> Logger { get; set; }
 
     [Inject]
     private GraphServices GraphServices { get; set; }
@@ -34,6 +35,8 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     private IDisposable _esphomeOptionsDispose;
     private Subscriber subscriber;
 
+    private Dictionary<string, string> weatherData = new();
+
     public void Dispose()
     {
         _esphomeOptionsDispose?.Dispose();
@@ -44,6 +47,8 @@ public partial class Home : IProcessEventSubscriber, IDisposable
     {
         _esphomeOptionsDispose = EsphomeOptions.OnChange(OnOptionChanged);
         subscriber = ProcessEvent.Subscribe(this);
+
+        subscriber.DataReceives.TryAdd(Random.Shared.Next().ToString(), this);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -96,5 +101,25 @@ public partial class Home : IProcessEventSubscriber, IDisposable
         using var streamRef = new DotNetStreamReference(stream: fileStream);
 
         await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+    }
+
+    public async Task ReceiveDataAsync(Dictionary<string, string> data)
+    {
+        foreach(var d in data)
+        {
+            weatherData[d.Key] = d.Value;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string TryReadWeatherData(string key)
+    {
+        if(weatherData.TryGetValue(key, out var value))
+        {
+            return value;
+        }
+
+        return string.Empty;
     }
 }

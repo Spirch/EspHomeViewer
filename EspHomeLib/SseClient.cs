@@ -4,6 +4,7 @@ using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.ServerSentEvents;
@@ -190,6 +191,18 @@ public class SseClient : IDisposable
                     await onEventReceivedJson.SendAsync(espEvent, _uri);
                 }
             }
+            else if(string.Equals(item.EventType, "weather", StringComparison.OrdinalIgnoreCase))
+            {
+                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
+
+                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
+
+                var onEventReceivedJson = _processEvent;
+                if (onEventReceivedJson != null)
+                {
+                    await onEventReceivedJson.SendAsync(dict, _uri);
+                }
+            }
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} MonitoringAsync {uri} End", nameof(SseClient), uri);
@@ -210,9 +223,14 @@ public class SseClient : IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
         cancellationTokenSource?.Cancel();
-        _semaphore.Wait(); //wait until the cancelled is completed
+        try
+        {
+            _semaphore.Wait(); //wait until the cancelled is completed
 
-        _semaphore.Dispose();
+            _semaphore.Dispose();
+        }
+        catch (ObjectDisposedException) { }
+
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
         _esphomeOptionsDispose?.Dispose();

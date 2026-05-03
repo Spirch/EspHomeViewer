@@ -7,6 +7,11 @@ a, .btn-link {
     color: #006bb7;
 }
 
+p {
+    all: revert;
+    margin: 0;
+}
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;
@@ -43,10 +48,48 @@ h1:focus {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+
+table {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 10px;
+    height: 100%;
+    table-layout: fixed;
+    margin-bottom: 20px
+}
+
+td, th {
+    border: 2px solid #282828;
+    text-align: center;
+    padding: 3px;
+    transition: background-color 1s ease-in-out;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+thead tr:nth-child(even) {
+    color: white;
+}
+
+thead tr:nth-child(odd) {
+    color: gray;
+}
+
+tbody tr:nth-child(even) {
+    color: white;
+}
+
+tbody tr:nth-child(odd) {
+    color: gray;
+}
+
+.highlight {
+    background-color: #18454E; /* Temporary highlight color */
 }

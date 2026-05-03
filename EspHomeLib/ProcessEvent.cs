@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -111,6 +111,15 @@ public class ProcessEvent : IDisposable
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} End", nameof(ProcessEvent), uri);
     }
 
+    public async Task SendAsync(Dictionary<string,string> data, Uri uri)
+    {
+        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} Start", nameof(ProcessEvent), uri);
+
+        await DispatchDataAsync(data);
+
+        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} End", nameof(ProcessEvent), uri);
+    }
+
     private async Task DispatchDataAsync(EspEvent espEvent, FriendlyDisplay friendlyDisplay)
     {
         foreach (var sub in subscriber)
@@ -133,6 +142,19 @@ public class ProcessEvent : IDisposable
             if (onEvent != null)
             {
                 await onEvent.ReceiveRawDataAsync(espEvent);
+            }
+        }
+    }
+
+    private async Task DispatchDataAsync(Dictionary<string, string> data)
+    {
+        foreach (var sub in subscriber)
+        {
+            if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} ReceiveDataAsync {data}", nameof(ProcessEvent), data);
+
+            foreach(var rec in sub.Value.DataReceives.Values)
+            {
+                await rec.ReceiveDataAsync(data);
             }
         }
     }
