@@ -22,7 +22,7 @@ public class MinimalApi
         {
             if(httpContext.Connection.LocalPort == 5163)
             {
-                logger.LogInformation("Post from {ip}", httpContext.Connection.RemoteIpAddress);
+                //logger.LogInformation("Post from {ip}", httpContext.Connection.RemoteIpAddress);
 
                 try
                 {

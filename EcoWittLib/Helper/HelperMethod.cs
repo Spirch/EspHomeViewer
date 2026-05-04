@@ -51,6 +51,24 @@ public static class HelperMethod
         {
             dict.Remove(rem);
         }
+
+        dict["dewPoint"] = string.Empty;
+        dict["humidex"] = string.Empty;
+        dict["windChill"] = string.Empty;
+
+        if (dict.TryGetValue("tempc", out var tempc) && decimal.TryParse(tempc, out var dectempc))
+        {
+            if (dict.TryGetValue("humidity", out var humidity) && decimal.TryParse(humidity, out var dechumidity))
+            {
+                dict["dewPoint"] = EnvironmentCanadaWeather.CalculateDewPoint(dectempc, dechumidity);
+                dict["humidex"] = EnvironmentCanadaWeather.CalculateHumidex(dectempc, dechumidity);
+            }
+
+            if (dict.TryGetValue("windspeedkmh", out var windspeedkmh) && decimal.TryParse(windspeedkmh, out var decwindspeedkmh))
+            {
+                dict["windChill"] = EnvironmentCanadaWeather.CalculateWindChill(dectempc, decwindspeedkmh);
+            }
+        }
     }
 
     public static string FtoC(this decimal fahrenheit)
