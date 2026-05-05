@@ -1,4 +1,5 @@
-﻿using EcoWittLib.SSE;
+﻿using ChannelLib;
+using EcoWittLib.SSE;
 
 namespace EcoWittLib.Helper;
 
@@ -106,7 +107,7 @@ public static class HelperMethod
         return caridnals[(int)Math.Round((degrees % 3600) / 225)];
     }
 
-    public static async Task StartPingAsync(EventBroadcaster broadcast)
+    public static async Task StartPingAsync(EventBroadcaster<BroadcastMessage, string> broadcast)
     {
         if (broadcast != null)
         {
@@ -116,7 +117,7 @@ public static class HelperMethod
                 {
                     if (await ping.WaitForNextTickAsync())
                     {
-                        await broadcast.BroadcastAsync(BroadcastMessage.Create("keepalive", "ping"));
+                        broadcast.Broadcast(BroadcastMessage.Create("keepalive", "ping"));
                     }
                 }
             });

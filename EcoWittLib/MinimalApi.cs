@@ -1,4 +1,5 @@
-﻿using EcoWittLib.Helper;
+﻿using ChannelLib;
+using EcoWittLib.Helper;
 using EcoWittLib.SSE;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -18,7 +19,7 @@ public class MinimalApi
     {
         app.MapPost("/weatherforecast", async (HttpContext httpContext,
                                                ILogger<MinimalApi> logger,
-                                               EventBroadcaster broadcaster) =>
+                                               EventBroadcaster<BroadcastMessage, string> broadcaster) =>
         {
             if(httpContext.Connection.LocalPort == 5163)
             {
@@ -32,7 +33,7 @@ public class MinimalApi
                     dict?.FixWeatherData();
                     var json = JsonSerializer.Serialize(dict);
 
-                    await broadcaster.BroadcastAsync(BroadcastMessage.Create("weather", json));
+                    broadcaster.Broadcast(BroadcastMessage.Create("weather", json));
                 }
                 catch (Exception ex)
                 {
@@ -49,7 +50,7 @@ public class MinimalApi
 
         app.MapGet("/stream", async (HttpContext httpContext,
                                      ILogger<MinimalApi> logger,
-                                     EventBroadcaster broadcaster,
+                                     EventBroadcaster<BroadcastMessage, string> broadcaster,
                                      CancellationToken ct) =>
         {
             logger.LogInformation("Get Stream from {ip}", httpContext.Connection.RemoteIpAddress);
@@ -57,11 +58,11 @@ public class MinimalApi
 
             SseWriter.SetSseHeaders(httpContext.Response);
 
-            var reader = broadcaster.Subscribe(httpContext.TraceIdentifier);
+            using var subscriber = broadcaster.Subscribe(httpContext.TraceIdentifier);
 
             try
             {
-                await foreach (var message in reader.ReadAllAsync(ct))
+                await foreach (var message in subscriber.Reader.ReadAllAsync(ct))
                 {
                     await SseWriter.WriteEventAsync(httpContext.Response, message, ct: ct);
                 }
@@ -70,13 +71,8 @@ public class MinimalApi
             {
                 //broadcaster.Unsubscribe(httpContext.TraceIdentifier);
             }
-            finally
-            {
-                broadcaster.Unsubscribe(httpContext.TraceIdentifier);
-            }
 
             logger.LogInformation("Close Stream from {ip}", httpContext.Connection.RemoteIpAddress);
-
         });
     }
 }

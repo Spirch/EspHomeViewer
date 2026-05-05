@@ -21,7 +21,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     private readonly IDisposable _esphomeOptionsDispose;
     private EsphomeOptions _esphomeOptions;
 
-    private readonly ILogger<SseClient> _logger;
+    private readonly ILogger<DatabaseManager> _logger;
     private readonly ProcessEvent _processEvent;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly BlockingCollection<IDbItem> Queue = new();
@@ -34,7 +34,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     public DatabaseManager(ProcessEvent processEvent, 
                            IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
                            IServiceScopeFactory serviceScopeFactory,
-                           ILogger<SseClient> logger)
+                           ILogger<DatabaseManager> logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _processEvent = processEvent;
@@ -228,26 +228,33 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     {
         var newEvent = new Event(espEvent);
 
-        recordData.TryGetValue(newEvent.SourceId, out var data);
-        newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
-
-        if (espEvent.Event_Type == null)
+        if(recordData.TryGetValue(newEvent.SourceId, out var data))
         {
-            if (Math.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
-            {
-                if (data.LastValue != newEvent.Data)
-                {
-                    data.LastValue = newEvent.Data;
-                    Queue.Add(newEvent);
-                }
+            newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
 
-                data.LastRecordSw.Restart();
+            if (espEvent.Event_Type == null)
+            {
+                if (Math.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+                {
+                    if (data.LastValue != newEvent.Data)
+                    {
+                        data.LastValue = newEvent.Data;
+                        Queue.Add(newEvent);
+                    }
+
+                    data.LastRecordSw.Restart();
+                }
+            }
+            else
+            {
+                Queue.Add(newEvent);
             }
         }
         else
         {
-            Queue.Add(newEvent);
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} HandleSingleEvent missing {SourceId}", nameof(DatabaseManager), newEvent.SourceId);
         }
+        
 
         await Task.CompletedTask;
     }

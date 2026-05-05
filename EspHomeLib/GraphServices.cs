@@ -23,18 +23,22 @@ public static class Key
 
 public class GraphServices
 {
-    private readonly EfContext _efContext;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public GraphServices(EfContext efContext)
+    public GraphServices(IServiceScopeFactory serviceScopeFactory)
     {
-        _efContext = efContext;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public async Task<byte[]> GraphAsync(string name, string friendlyName, int days)
     {
         byte[] result = null;
 
-        var meta = await _efContext.RowEntry
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+
+        var meta = await efContext.RowEntry
                                    .AsNoTracking()
                                    .FirstOrDefaultAsync(x => x.Name == name &&
                                    (string.IsNullOrEmpty(friendlyName) || x.FriendlyName == friendlyName));
@@ -42,7 +46,7 @@ public class GraphServices
         if (meta != null)
         {
             var unixFilter = days > 0 ? DateTimeOffset.Now.AddDays(-days).ToUnixTimeSeconds() : 0;
-            var data = await _efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId)
+            var data = await efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId)
                                              .Select(x => new { x.Data, x.UnixTime, })
                                              .ToListAsync();
 

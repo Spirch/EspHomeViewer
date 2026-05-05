@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EspHomeLib", "EspHomeLib\Es
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EcoWittLib", "EcoWittLib\EcoWittLib.csproj", "{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChannelLib", "ChannelLib\ChannelLib.csproj", "{5C4E3EDF-1348-491B-A503-6003B143C9C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{632DDEDC-3F99-41F8-AC86-23833C4C5D2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C4E3EDF-1348-491B-A503-6003B143C9C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C4E3EDF-1348-491B-A503-6003B143C9C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C4E3EDF-1348-491B-A503-6003B143C9C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C4E3EDF-1348-491B-A503-6003B143C9C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
