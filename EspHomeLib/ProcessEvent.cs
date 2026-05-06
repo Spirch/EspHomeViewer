@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,7 +19,8 @@ public class ProcessEvent : IDisposable
 
     private readonly ConcurrentDictionary<IProcessEventSubscriber, Subscriber> subscriber = new();
 
-    public ProcessEvent(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor, ILogger<ProcessEvent> logger)
+    public ProcessEvent(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                        ILogger<ProcessEvent> logger)
     {
         _logger = logger;
         _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
@@ -111,15 +111,6 @@ public class ProcessEvent : IDisposable
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} End", nameof(ProcessEvent), uri);
     }
 
-    public async Task SendAsync(Dictionary<string,string> data, Uri uri)
-    {
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} Start", nameof(ProcessEvent), uri);
-
-        await DispatchDataAsync(data);
-
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} End", nameof(ProcessEvent), uri);
-    }
-
     private async Task DispatchDataAsync(EspEvent espEvent, FriendlyDisplay friendlyDisplay)
     {
         foreach (var sub in subscriber)
@@ -146,19 +137,6 @@ public class ProcessEvent : IDisposable
         }
     }
 
-    private async Task DispatchDataAsync(Dictionary<string, string> data)
-    {
-        foreach (var sub in subscriber)
-        {
-            if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} ReceiveDataAsync {data}", nameof(ProcessEvent), data);
-
-            foreach(var rec in sub.Value.DataReceives.Values)
-            {
-                await rec.ReceiveDataAsync(data);
-            }
-        }
-    }
-
     public async Task SendAsync(Exception exception, Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived {uri} Start", nameof(ProcessEvent), uri);
@@ -175,17 +153,6 @@ public class ProcessEvent : IDisposable
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} ExceptionReceived {uri} Stop", nameof(ProcessEvent), uri);
-
-        await Task.CompletedTask;
-    }
-
-    public async Task SendAsync(string data, Uri uri)
-    {
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived {uri} Start", nameof(ProcessEvent), uri);
-
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived Invoke {data}", nameof(ProcessEvent), data);
-
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} RawMessageReceived {uri} Stop", nameof(ProcessEvent), uri);
 
         await Task.CompletedTask;
     }

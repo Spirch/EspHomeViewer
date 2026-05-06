@@ -1,11 +1,6 @@
 ﻿using ChannelLib;
-using EcoWittLib.SSE;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EcoWittLib.Helper;
 
@@ -13,7 +8,8 @@ public static class AddEspHomeLib
 {
     public static IServiceCollection AddEcoWitt(this IServiceCollection services)
     {
-        services.AddSingleton<EventBroadcaster<BroadcastMessage, string>>();
+        services.AddSingleton<EventBroadcaster<EcoWittSse, string>>();
+        services.AddSingleton<EventBroadcaster<Dictionary<string, string>, IChannelSubscriber>>();
 
         return services;
     }
@@ -22,10 +18,10 @@ public static class AddEspHomeLib
     {
         MinimalApi.Map(app);
 
-        var broadcast = app.Services.GetRequiredService<EventBroadcaster<BroadcastMessage, string>>();
+        var broadcast = app.Services.GetRequiredService<EventBroadcaster<EcoWittSse, string>>();
         if (broadcast != null)
         {
-            await HelperMethod.StartPingAsync(broadcast);
+            await SseHelper.StartPingAsync(broadcast);
         }
 
         return app;

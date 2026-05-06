@@ -1,12 +1,7 @@
-﻿using ChannelLib;
-using EcoWittLib.SSE;
-
-namespace EcoWittLib.Helper;
+﻿namespace EcoWittLib.Helper;
 
 public static class HelperMethod
 {
-    private static readonly PeriodicTimer ping = new(TimeSpan.FromSeconds(30));
-
     private static readonly (string from, string to, Func<decimal, string> convert)[] dic_from_to = 
         [
             ("tempinf", "tempinc", (from) => FtoC(from)),
@@ -105,22 +100,5 @@ public static class HelperMethod
         degrees *= 10;
         
         return caridnals[(int)Math.Round((degrees % 3600) / 225)];
-    }
-
-    public static async Task StartPingAsync(EventBroadcaster<BroadcastMessage, string> broadcast)
-    {
-        if (broadcast != null)
-        {
-            _ = Task.Run(async () =>
-            {
-                while (true)
-                {
-                    if (await ping.WaitForNextTickAsync())
-                    {
-                        broadcast.Broadcast(BroadcastMessage.Create("keepalive", "ping"));
-                    }
-                }
-            });
-        }
     }
 }

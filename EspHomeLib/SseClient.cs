@@ -1,5 +1,5 @@
-﻿using EspHomeLib.Dto;
-using EspHomeLib.Interface;
+﻿using ChannelLib;
+using EspHomeLib.Dto;
 using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,10 +16,10 @@ using System.Threading.Tasks;
 namespace EspHomeLib;
 public class SseClient : IDisposable
 {
-
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IDisposable _esphomeOptionsDispose;
     private readonly ProcessEvent _processEvent;
+    private readonly EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> _channelSubscriber;
     private readonly ILogger<SseClient> _logger;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -40,6 +40,7 @@ public class SseClient : IDisposable
     public SseClient(IHttpClientFactory httpClientFactory,
                      IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
                      ProcessEvent processEvent,
+                     EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> channelSubscriber,
                      ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
@@ -49,6 +50,7 @@ public class SseClient : IDisposable
         _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
 
         _processEvent = processEvent;
+        _channelSubscriber = channelSubscriber;
     }
     private void OnOptionChanged(EsphomeOptions currentValue)
     {
@@ -169,17 +171,14 @@ public class SseClient : IDisposable
                 throw new TimeoutException($"{uri} cancellationTokenTimeout");
             }
 
-            var onEventReceivedData = _processEvent;
-            if (onEventReceivedData != null)
-            {
-                await onEventReceivedData.SendAsync(item.Data, _uri);
-            }
-
             if (string.Equals(item.EventType, "state", StringComparison.OrdinalIgnoreCase))
             {
                 if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, item.Data);
 
-                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
+                if (!timeoutTokenSource.TryReset())
+                {
+                    throw new TimeoutException($"{uri} cancellationTokenTimeout");
+                }
 
                 var espEvent = JsonSerializer.Deserialize<EspEvent>(item.Data, jsonOptions);
 
@@ -193,15 +192,14 @@ public class SseClient : IDisposable
             }
             else if(string.Equals(item.EventType, "weather", StringComparison.OrdinalIgnoreCase))
             {
-                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
+                if (!timeoutTokenSource.TryReset())
+                {
+                    throw new TimeoutException($"{uri} cancellationTokenTimeout");
+                }
 
                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
 
-                var onEventReceivedJson = _processEvent;
-                if (onEventReceivedJson != null)
-                {
-                    await onEventReceivedJson.SendAsync(dict, _uri);
-                }
+                _channelSubscriber.Broadcast(dict);
             }
         }
 

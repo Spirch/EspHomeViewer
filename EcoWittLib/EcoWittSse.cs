@@ -1,6 +1,6 @@
-﻿namespace EcoWittLib.SSE;
+﻿namespace EcoWittLib;
 
-public class BroadcastMessage
+public class EcoWittSse
 {
     private static int _id;
     public int Id { get; private set; }
@@ -8,7 +8,7 @@ public class BroadcastMessage
     public string Data { get; private set; } = string.Empty;
     public string EventType { get; private set; } = "Undefined";
 
-    public static BroadcastMessage Create(string eventType, string data)
+    public static EcoWittSse Create(string eventType, string data)
     {
         return new() { Id = Interlocked.Increment(ref _id), EventType = eventType, Data = data };
     }

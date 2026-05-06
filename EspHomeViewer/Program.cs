@@ -1,14 +1,9 @@
-using EcoWittLib;
 using EcoWittLib.Helper;
-using EcoWittLib.SSE;
 using EspHomeLib.Helper;
 using EspHomeViewer.Components;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System.Reflection.Metadata.Ecma335;
-using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 

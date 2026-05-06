@@ -1,31 +1,49 @@
-﻿using EspHomeLib;
-using EspHomeLib.Dto;
-using EspHomeLib.Interface;
-using EspHomeLib.Option;
+﻿using ChannelLib;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Pages;
 
-public partial class EcoWitt : IProcessEventSubscriber, IDataCanReceive, IDisposable
+public partial class EcoWitt : IChannelSubscriber, IDisposable
 {
     [Inject]
-    private ProcessEvent ProcessEvent { get; set; }
+    private EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> ChannelSubscriber { get; set; }
 
     [Inject]
     IJSRuntime JS { get; set; }
 
-    private Dictionary<string, string> weatherData = new();
-    private Subscriber subscriber;
+    private readonly Dictionary<string, string> weatherData = new();
+
+    private EventSubscriber<Dictionary<string, string>> eventSubscriber;
+    private CancellationTokenSource weatherDataCT;
 
     protected override void OnParametersSet()
     {
-        subscriber = ProcessEvent.Subscribe(this);
+        eventSubscriber = ChannelSubscriber.Subscribe(this);
 
-        subscriber.DataReceives.TryAdd(Random.Shared.Next().ToString(), this);
+        _ = Task.Run(async () => 
+        {
+            weatherDataCT = new CancellationTokenSource();
+            try
+            {
+                await foreach (var message in eventSubscriber.Reader.ReadAllAsync(weatherDataCT.Token))
+                {
+                    foreach (var d in message)
+                    {
+                        weatherData[d.Key] = d.Value;
+                    }
+
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -46,18 +64,9 @@ public partial class EcoWitt : IProcessEventSubscriber, IDataCanReceive, IDispos
         return string.Empty;
     }
 
-    public async Task ReceiveDataAsync(Dictionary<string, string> data)
-    {
-        foreach (var d in data)
-        {
-            weatherData[d.Key] = d.Value;
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-
     public void Dispose()
     {
-        ProcessEvent.Unsubscribe(this);
+        weatherDataCT.Cancel();
+        eventSubscriber.Dispose();
     }
 }
