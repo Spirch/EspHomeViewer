@@ -1,5 +1,4 @@
-﻿using EspHomeLib;
-using EspHomeLib.Dto;
+﻿using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using Microsoft.AspNetCore.Components;
 using System;
@@ -10,7 +9,7 @@ namespace EspHomeViewer.Components.Control;
 public partial class SingleInput : IEventCanReceive
 {
     [Inject]
-    private ProcessEvent ProcessEvent { get; set; }
+    private EspHomeData EspHomeData { get; set; }
 
     [Parameter, EditorRequired]
     public string DeviceName { get; set; }
@@ -29,7 +28,7 @@ public partial class SingleInput : IEventCanReceive
 
     protected override void OnParametersSet()
     {
-        var friendlyDisplay = ProcessEvent.TryGetData(DeviceName, Name);
+        var friendlyDisplay = EspHomeData.TryGetData(DeviceName, Name);
 
         Data = friendlyDisplay?.Data;
         LastUpdate = friendlyDisplay?.LastUpdate;

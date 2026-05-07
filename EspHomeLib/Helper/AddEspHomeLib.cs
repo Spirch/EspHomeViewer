@@ -1,11 +1,12 @@
 ﻿using EspHomeLib.Database;
+using EspHomeLib.Dto;
 using EspHomeLib.HostedServices;
 using EspHomeLib.Option;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 
 namespace EspHomeLib.Helper;
 public static class AddEspHomeLib
@@ -13,6 +14,7 @@ public static class AddEspHomeLib
     public static IServiceCollection AddSseManager(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<EsphomeOptions>(configuration.GetSection("EsphomeOptions"));
+        services.AddSingleton<EspHomeData>();
 
         services.AddHttpClient("sseClient").UseSocketsHttpHandler((handler, _) =>
             handler.ConnectCallback = async (ctx, ct) =>

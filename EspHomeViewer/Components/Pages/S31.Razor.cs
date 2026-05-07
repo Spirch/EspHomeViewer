@@ -1,23 +1,20 @@
-﻿using EspHomeLib;
+﻿using BlazorContextMenu;
+using EspHomeLib;
 using EspHomeLib.Dto;
 using EspHomeLib.Interface;
-using EspHomeLib.Option;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.JSInterop;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using BlazorContextMenu;
-using Microsoft.JSInterop;
-using System.Collections.Generic;
 
 namespace EspHomeViewer.Components.Pages;
 
 public partial class S31 : IProcessEventSubscriber, IDisposable
 {
     [Inject]
-    private IOptionsMonitor<EsphomeOptions> EsphomeOptions { get; set; }
+    private EspHomeData EspHomeData { get; set; }
 
     [Inject]
     private ProcessEvent ProcessEvent { get; set; }
@@ -32,19 +29,23 @@ public partial class S31 : IProcessEventSubscriber, IDisposable
     [Inject] 
     IJSRuntime JS { get; set; }
 
-    private IDisposable _esphomeOptionsDispose;
     private Subscriber subscriber;
 
     public void Dispose()
     {
-        _esphomeOptionsDispose?.Dispose();
+        EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
         ProcessEvent.Unsubscribe(this);
     }
 
     protected override void OnParametersSet()
     {
-        _esphomeOptionsDispose = EsphomeOptions.OnChange(OnOptionChanged);
+        EspHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
         subscriber = ProcessEvent.Subscribe(this);
+    }
+
+    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -53,11 +54,6 @@ public partial class S31 : IProcessEventSubscriber, IDisposable
         {
             await JS.InvokeVoidAsync("observeAllTables");
         }
-    }
-
-    private void OnOptionChanged(EsphomeOptions currentValue)
-    {
-        InvokeAsync(StateHasChanged);
     }
 
     private async Task OnMenuGraphClickAsync(ItemClickEventArgs e)

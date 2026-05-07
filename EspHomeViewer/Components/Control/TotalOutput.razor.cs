@@ -1,5 +1,4 @@
-﻿using EspHomeLib;
-using EspHomeLib.Dto;
+﻿using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using Microsoft.AspNetCore.Components;
 using System;
@@ -10,7 +9,7 @@ namespace EspHomeViewer.Components.Control;
 public partial class TotalOutput : IEventCanReceive
 {
     [Inject]
-    private ProcessEvent ProcessEvent { get; set; }
+    private EspHomeData EspHomeData { get; set; }
 
     [Parameter, EditorRequired]
     public string GroupInfo { get; set; }
@@ -26,7 +25,7 @@ public partial class TotalOutput : IEventCanReceive
 
     protected override void OnParametersSet()
     {
-        Data = ProcessEvent.TryGetSumValue(GroupInfo);
+        Data = EspHomeData.TryGetSumValue(GroupInfo);
         LastUpdate = DateTime.Now;
 
         Subscriber.EventGroupCanReceives.TryAdd(GroupInfo, this);
@@ -34,7 +33,7 @@ public partial class TotalOutput : IEventCanReceive
 
     public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
     {
-        Data = ProcessEvent.TryGetSumValue(GroupInfo);
+        Data = EspHomeData.TryGetSumValue(GroupInfo);
         LastUpdate = DateTime.Now;
 
         await InvokeAsync(StateHasChanged);

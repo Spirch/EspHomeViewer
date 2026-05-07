@@ -7,7 +7,7 @@
 </ContextMenu>
 
 <ContextMenu Id="DeviceMenu">
-    @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo)
+    @foreach (var status in EspHomeData.EsphomeOptions.StatusInfo)
     {
         <SubMenuDay StatusInfo="@status" OnMenuGraphClickAsync="@OnMenuGraphClickAsync"></SubMenuDay>
     }
@@ -16,7 +16,7 @@
 <PageTitle>S31 Data</PageTitle>
 <table>
     <tbody>
-        @foreach (var group in EsphomeOptions.CurrentValue.GroupInfo)
+        @foreach (var group in EspHomeData.EsphomeOptions.GroupInfo)
         {
             <tr>
                 <td>
@@ -36,14 +36,14 @@
             <th>
                 Device
             </th>
-            @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo.Where(x => !x.Hidden))
+            @foreach (var status in EspHomeData.EsphomeOptions.StatusInfo.Where(x => !x.Hidden))
             {
                 <th>@status.Name</th>
             }
         </tr>
     </thead>
     <tbody>
-        @foreach (var device in EsphomeOptions.CurrentValue.DeviceInfo)
+        @foreach (var device in EspHomeData.EsphomeOptions.DeviceInfo)
         {
             <tr>
                 <td>
@@ -51,7 +51,7 @@
                         @device.DeviceName
                     </ContextMenuTrigger>
                 </td>
-                @foreach (var status in EsphomeOptions.CurrentValue.StatusInfo.Where(x => !x.Hidden))
+                @foreach (var status in EspHomeData.EsphomeOptions.StatusInfo.Where(x => !x.Hidden))
                 {
                     <td><SingleInput DeviceName="@device.DeviceName" Name="@status.Name" Unit="@status.Unit" Subscriber="subscriber" /></td>
                 }

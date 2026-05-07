@@ -1,31 +1,35 @@
 ﻿using EspHomeLib.Dto;
 using EspHomeLib.Helper;
 using EspHomeLib.Interface;
-using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EspHomeLib;
 public class ProcessEvent : IDisposable
 {
-    private readonly IDisposable _esphomeOptionsDispose;
-    private EsphomeOptions _esphomeOptions;
+    private readonly EspHomeData _espHomeData;
 
     private readonly ILogger<ProcessEvent> _logger;
 
     private readonly ConcurrentDictionary<IProcessEventSubscriber, Subscriber> subscriber = new();
 
-    public ProcessEvent(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+    public ProcessEvent(EspHomeData espHomeData,
                         ILogger<ProcessEvent> logger)
     {
         _logger = logger;
-        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
+        _espHomeData = espHomeData;
 
-        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
+    }
+    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
+    {
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnEspHomeOptionChanged Start", nameof(ProcessEvent));
+
+        //do nothing for now
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnEspHomeOptionChanged End", nameof(ProcessEvent));
     }
 
     public Subscriber Subscribe(IProcessEventSubscriber sub)
@@ -51,55 +55,13 @@ public class ProcessEvent : IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Unsubscribe Stop {Count} {Name}", nameof(ProcessEvent), subscriber.Count, sub);
     }
 
-    private void OnOptionChanged(EsphomeOptions currentValue)
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(ProcessEvent));
-
-        foreach(var values in _esphomeOptions.DataDisplay)
-        {
-            if(currentValue.DataDisplay.TryGetValue(values.Key, out var value))
-            {
-                value.Data = values.Value.Data;
-                value.LastUpdate = values.Value.LastUpdate;
-            }
-        }
-
-        _esphomeOptions = currentValue;
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(ProcessEvent));
-    }
-
-    public FriendlyDisplay TryGetData(string deviceName, string name)
-    {
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {deviceName} {name}", nameof(ProcessEvent), deviceName, name);
-
-        _esphomeOptions.DataDisplay.TryGetValue((deviceName, name), out var friendlyDisplay);
-
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetValue {shortForm}", nameof(ProcessEvent), friendlyDisplay);
-
-        return friendlyDisplay;
-    }
-
-    public decimal? TryGetSumValue(string groupInfo)
-    {
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetSumValue {groupInfo}", nameof(ProcessEvent), groupInfo);
-
-        var sumValue = _esphomeOptions.DataDisplay.Values
-                       .Where(x => string.Equals(x.GroupInfo, groupInfo, StringComparison.OrdinalIgnoreCase))
-                       .Sum(x => x.Data);
-
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetSumValue {sumValue}", nameof(ProcessEvent), sumValue);
-
-        return sumValue;
-    }
-
     public async Task SendAsync(EspEvent espEvent, Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} EventReceived {uri} Start", nameof(ProcessEvent), uri);
 
-        if (_esphomeOptions.MergeInfo.TryGetValue(espEvent.Id, out var processOption))
+        if (_espHomeData.MergeInfo.TryGetValue(espEvent.Id, out var processOption))
         {
-            if (_esphomeOptions.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
+            if (_espHomeData.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
             {
                 friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
                 friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;
@@ -168,7 +130,7 @@ public class ProcessEvent : IDisposable
 
         subscriber.Clear();
 
-        _esphomeOptionsDispose?.Dispose();
+        _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(ProcessEvent));
     }

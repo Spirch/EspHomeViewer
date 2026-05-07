@@ -1,8 +1,6 @@
 ﻿using ChannelLib;
 using EspHomeLib.Dto;
-using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -17,14 +15,12 @@ namespace EspHomeLib;
 public class SseClient : IDisposable
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IDisposable _esphomeOptionsDispose;
+    private readonly EspHomeData _espHomeData;
     private readonly ProcessEvent _processEvent;
     private readonly EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> _channelSubscriber;
     private readonly ILogger<SseClient> _logger;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-
-    private EsphomeOptions _esphomeOptions;
 
     private Uri _uri;
 
@@ -38,25 +34,26 @@ public class SseClient : IDisposable
     };
 
     public SseClient(IHttpClientFactory httpClientFactory,
-                     IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                     EspHomeData espHomeData,
                      ProcessEvent processEvent,
                      EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> channelSubscriber,
                      ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
+        _espHomeData = espHomeData;
 
-        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
 
         _processEvent = processEvent;
         _channelSubscriber = channelSubscriber;
     }
-    private void OnOptionChanged(EsphomeOptions currentValue)
+
+    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(SseClient));
 
-        _esphomeOptions = currentValue;
+        //do nothing for now
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClient));
     }
@@ -88,7 +85,7 @@ public class SseClient : IDisposable
             {
                 if (!await PingAsync(_uri.Host))
                 {
-                    await Task.Delay(_esphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
+                    await Task.Delay(_espHomeData.EsphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
                     continue;
                 }
 
@@ -103,7 +100,7 @@ public class SseClient : IDisposable
                     {
                         await onEventReceived.SendAsync(ex, _uri);
                     }
-                    await Task.Delay(_esphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
+                    await Task.Delay(_espHomeData.EsphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
                 }
             }
         }
@@ -124,7 +121,7 @@ public class SseClient : IDisposable
 
             using var ping = new Ping();
 
-            var pingReply = await ping.SendPingAsync(host, TimeSpan.FromSeconds(_esphomeOptions.SseClient.PingTimeout), cancellationToken: cancellationTokenSource.Token);
+            var pingReply = await ping.SendPingAsync(host, TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.PingTimeout), cancellationToken: cancellationTokenSource.Token);
 
             result = pingReply.Status == IPStatus.Success;
         }
@@ -160,7 +157,7 @@ public class SseClient : IDisposable
 
         //todo: remove if not useful in the future
         using var timeoutTokenSource = new CancellationTokenSource();
-        timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_esphomeOptions.SseClient.TimeoutDelay));
+        timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
 
         using var cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, timeoutTokenSource.Token);
 
@@ -231,7 +228,7 @@ public class SseClient : IDisposable
 
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
-        _esphomeOptionsDispose?.Dispose();
+        _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} End", nameof(SseClient), _uri);
     }

@@ -2,12 +2,10 @@
 using EspHomeLib.Database.Model;
 using EspHomeLib.Dto;
 using EspHomeLib.Interface;
-using EspHomeLib.Option;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -18,8 +16,7 @@ using System.Threading.Tasks;
 namespace EspHomeLib.HostedServices;
 public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCanReceive, IDisposable
 {
-    private readonly IDisposable _esphomeOptionsDispose;
-    private EsphomeOptions _esphomeOptions;
+    private readonly EspHomeData _espHomeData;
 
     private readonly ILogger<DatabaseManager> _logger;
     private readonly ProcessEvent _processEvent;
@@ -32,32 +29,30 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     private Task runningInstance;
 
     public DatabaseManager(ProcessEvent processEvent, 
-                           IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                           EspHomeData espHomeData,
                            IServiceScopeFactory serviceScopeFactory,
                            ILogger<DatabaseManager> logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _processEvent = processEvent;
         _logger = logger;
-        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
+        _espHomeData = espHomeData;
 
         InitOption();
 
         subscriber = _processEvent.Subscribe(this);
         subscriber.OnEvent = this;
-        
-        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
+
+        _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
     }
 
-    private void OnOptionChanged(EsphomeOptions currentValue)
+    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(DatabaseManager));
-
-        _esphomeOptions = currentValue;
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnEspHomeOptionChanged Start", nameof(DatabaseManager));
 
         InitOption();
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(DatabaseManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnEspHomeOptionChanged End", nameof(DatabaseManager));
     }
 
     private void InitOption()
@@ -74,7 +69,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         using var scope = _serviceScopeFactory.CreateScope();
         using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
 
-        foreach (var device in _esphomeOptions.MergeInfo)
+        foreach (var device in _espHomeData.MergeInfo)
         {
             RowEntry rowEntry = efContext.RowEntry
                                          .FirstOrDefault(x => x.Name == device.Key &&
@@ -113,7 +108,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
             data.GroupInfoName = device.Value.StatusInfo.GroupInfoName;
         }
 
-        foreach (var group in _esphomeOptions.GroupInfo)
+        foreach (var group in _espHomeData.EsphomeOptions.GroupInfo)
         {
             RowEntry rowEntry = efContext.RowEntry.FirstOrDefault(x => x.Name == group.Id);
 
@@ -261,13 +256,13 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
 
     private async Task HandleGroupEvent(EspEvent espEvent)
     {
-        if (_esphomeOptions.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
+        if (_espHomeData.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
             processOption.GroupInfo != null)
         {
             var newEvent = new Event()
             {
                 SourceId = processOption.GroupInfo.Id,
-                Data = _processEvent.TryGetSumValue(processOption.GroupInfo.Name) ?? 0m,
+                Data = _espHomeData.TryGetSumValue(processOption.GroupInfo.Name) ?? 0m,
                 UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 IsGroup = true,
             };
@@ -303,7 +298,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
     {
         await InsertErrorAsync(new Error()
         {
-            Date = DateTime.Now.ToString(_esphomeOptions.SseClient.DateTimeFormat),
+            Date = DateTime.Now.ToString(_espHomeData.EsphomeOptions.SseClient.DateTimeFormat),
             DeviceName = source,
             Exception = e.ToString(),
             Message = message ?? e.Message
@@ -325,7 +320,7 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
 
         _processEvent.Unsubscribe(this);
-        _esphomeOptionsDispose?.Dispose();
+        _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));
     }

@@ -1,8 +1,7 @@
-﻿using EspHomeLib.Option;
+﻿using EspHomeLib.Dto;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,39 +12,27 @@ using System.Threading.Tasks;
 namespace EspHomeLib.HostedServices;
 public class SseClientManager : IHostedService, IDisposable
 {
-    private readonly IDisposable _esphomeOptionsDispose;
-    private EsphomeOptions _esphomeOptions;
+    private readonly EspHomeData _espHomeData;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ConcurrentDictionary<Uri, SseClient> _sseClients = new();
     private readonly ILogger<SseClientManager> _logger;
 
-    public SseClientManager(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+    public SseClientManager(EspHomeData espHomeData,
                             IServiceProvider serviceProvider,
                             ILogger<SseClientManager> logger)
     {
+        _espHomeData = espHomeData;
         _serviceProvider = serviceProvider;
         _logger = logger;
-        _esphomeOptions = esphomeOptionsMonitor.CurrentValue;
-
-        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
     }
 
-    private void OnOptionChanged(EsphomeOptions currentValue)
+    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(SseClientManager));
 
-        _esphomeOptions = currentValue;
-        OnConfigChange(currentValue);
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClientManager));
-    }
-
-    private void OnConfigChange(EsphomeOptions newConfig)
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnConfigChange Start", nameof(SseClientManager));
-
-        var newUris = newConfig.Uri;
+        var newUris = _espHomeData.EsphomeOptions.Uri;
         var currentUris = _sseClients.Keys;
 
         foreach (var uri in newUris.Except(currentUris))
@@ -58,14 +45,14 @@ public class SseClientManager : IHostedService, IDisposable
             RemoveClient(uri);
         }
 
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnConfigChange End", nameof(SseClientManager));
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClientManager));
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
 
-        InitializeClients(_esphomeOptions.Uri);
+        InitializeClients(_espHomeData.EsphomeOptions.Uri);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(SseClientManager));
 
@@ -132,7 +119,7 @@ public class SseClientManager : IHostedService, IDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(SseClientManager));
 
-        _esphomeOptionsDispose.Dispose();
+        _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         foreach (var client in _sseClients.Values)
         {
