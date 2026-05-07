@@ -1,5 +1,6 @@
 ﻿using ChannelLib;
 using EspHomeLib.Dto;
+using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -172,10 +173,7 @@ public class SseClient : IDisposable
             {
                 if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, item.Data);
 
-                if (!timeoutTokenSource.TryReset())
-                {
-                    throw new TimeoutException($"{uri} cancellationTokenTimeout");
-                }
+                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
 
                 var espEvent = JsonSerializer.Deserialize<EspEvent>(item.Data, jsonOptions);
 
@@ -189,10 +187,7 @@ public class SseClient : IDisposable
             }
             else if(string.Equals(item.EventType, "weather", StringComparison.OrdinalIgnoreCase))
             {
-                if (!timeoutTokenSource.TryReset())
-                {
-                    throw new TimeoutException($"{uri} cancellationTokenTimeout");
-                }
+                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
 
                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
 

@@ -267,14 +267,20 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
                 IsGroup = true,
             };
 
-            recordData.TryGetValue(newEvent.SourceId, out var data);
-            newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
-
-            if (data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+            if(recordData.TryGetValue(newEvent.SourceId, out var data))
             {
-                Queue.Add(newEvent);
+                newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
 
-                data.LastRecordSw.Restart();
+                if (data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+                {
+                    Queue.Add(newEvent);
+
+                    data.LastRecordSw.Restart();
+                }
+            }
+            else
+            {
+                if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} HandleGroupEvent missing {SourceId}", nameof(DatabaseManager), newEvent.SourceId);
             }
         }
 
