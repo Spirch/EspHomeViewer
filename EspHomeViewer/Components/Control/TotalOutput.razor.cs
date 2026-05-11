@@ -9,7 +9,7 @@ using System.Xml.Linq;
 
 namespace EspHomeViewer.Components.Control;
 
-public partial class TotalOutput : IEspHomeUpdate, IDisposable
+public partial class TotalOutput : IChannelSubscriber<string>, IEspHomeUpdate, IDisposable
 {
     [Inject]
     private EspHomeData EspHomeData { get; set; }
@@ -21,7 +21,7 @@ public partial class TotalOutput : IEspHomeUpdate, IDisposable
     public string Unit { get; set; }
 
     [Parameter, EditorRequired]
-    public EventBroadcaster<IEspHomeUpdate, string> ChannelSubscriberUpdate { get; set; }
+    public EventBroadcaster<IEspHomeUpdate, IChannelSubscriber<string>> ChannelSubscriberUpdate { get; set; }
 
     private EventSubscriber<IEspHomeUpdate> channelSubscriber;
     private CancellationTokenSource channelSubscriberCT;
@@ -29,12 +29,14 @@ public partial class TotalOutput : IEspHomeUpdate, IDisposable
     private decimal? Data { get; set; }
     private DateTime? LastUpdate { get; set; }
 
+    public string ChannelNameId => GroupInfo;
+
     protected override void OnParametersSet()
     {
         Data = EspHomeData.TryGetSumValue(GroupInfo);
         LastUpdate = DateTime.Now;
 
-        channelSubscriber = ChannelSubscriberUpdate.Subscribe(GroupInfo);
+        channelSubscriber = ChannelSubscriberUpdate.Subscribe(this);
         ListenEventSubscriber();
     }
 

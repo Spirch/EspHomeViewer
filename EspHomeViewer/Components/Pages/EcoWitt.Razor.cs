@@ -8,13 +8,15 @@ using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Pages;
 
-public partial class EcoWitt : IChannelSubscriber, IDisposable
+public partial class EcoWitt : IChannelSubscriber<string>, IDisposable
 {
     [Inject]
-    private EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> ChannelSubscriber { get; set; }
+    private EventBroadcaster<Dictionary<string, string>, IChannelSubscriber<string>> ChannelSubscriber { get; set; }
 
     [Inject]
     IJSRuntime JS { get; set; }
+
+    public string ChannelNameId => nameof(EcoWitt);
 
     private readonly Dictionary<string, string> weatherData = new();
 

@@ -1,5 +1,6 @@
 ﻿namespace ChannelLib;
 
-public interface IChannelSubscriber
+public interface IChannelSubscriber<T>
 {
+    T ChannelNameId { get; }
 }

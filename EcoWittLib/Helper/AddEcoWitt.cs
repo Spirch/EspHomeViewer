@@ -9,7 +9,7 @@ public static class AddEspHomeLib
     public static IServiceCollection AddEcoWitt(this IServiceCollection services)
     {
         services.AddSingleton<EventBroadcaster<EcoWittSse, string>>();
-        services.AddSingleton<EventBroadcaster<Dictionary<string, string>, IChannelSubscriber>>();
+        services.AddSingleton<EventBroadcaster<Dictionary<string, string>, IChannelSubscriber<string>>>();
 
         return services;
     }

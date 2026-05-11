@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Control;
 
-public partial class SingleInput : IEspHomeUpdate, IDisposable
+public partial class SingleInput : IChannelSubscriber<string>, IEspHomeUpdate, IDisposable
 {
     [Inject]
     private EspHomeData EspHomeData { get; set; }
@@ -23,13 +23,15 @@ public partial class SingleInput : IEspHomeUpdate, IDisposable
     public string Unit { get; set; }
 
     [Parameter, EditorRequired]
-    public EventBroadcaster<IEspHomeUpdate, string> ChannelSubscriberUpdate { get; set; }
+    public EventBroadcaster<IEspHomeUpdate, IChannelSubscriber<string>> ChannelSubscriberUpdate { get; set; }
 
     private EventSubscriber<IEspHomeUpdate> channelSubscriber;
     private CancellationTokenSource channelSubscriberCT;
 
     private decimal? Data { get; set; }
     private DateTime? LastUpdate { get; set; }
+
+    public string ChannelNameId => $"{DeviceName}.{Name}";
 
     protected override void OnParametersSet()
     {
@@ -38,7 +40,7 @@ public partial class SingleInput : IEspHomeUpdate, IDisposable
         Data = friendlyDisplay?.Data;
         LastUpdate = friendlyDisplay?.LastUpdate;
 
-        channelSubscriber = ChannelSubscriberUpdate.Subscribe($"{DeviceName}.{Name}");
+        channelSubscriber = ChannelSubscriberUpdate.Subscribe(this);
         ListenEventSubscriber();
     }
 

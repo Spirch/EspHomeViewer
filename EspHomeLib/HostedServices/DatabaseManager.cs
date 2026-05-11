@@ -15,7 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib.HostedServices;
-public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
+public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisposable
 {
     private readonly EspHomeData _espHomeData;
 
@@ -31,8 +31,10 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
 
     private Task runningInstance;
 
-    public DatabaseManager(EventBroadcaster<EspEvent, IChannelSubscriber> channelSubscriberEspEvent,
-                           EventBroadcaster<Exception, IChannelSubscriber> channelSubscriberException,
+    public string ChannelNameId => nameof(DatabaseManager);
+
+    public DatabaseManager(EventBroadcaster<EspEvent, IChannelSubscriber<string>> channelSubscriberEspEvent,
+                           EventBroadcaster<Exception, IChannelSubscriber<string>> channelSubscriberException,
                            EspHomeData espHomeData,
                            IServiceScopeFactory serviceScopeFactory,
                            ILogger<DatabaseManager> logger)
