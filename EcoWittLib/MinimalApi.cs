@@ -50,7 +50,6 @@ public class MinimalApi
         {
             logger.LogInformation("Get Stream from {ip}", httpContext.Connection.RemoteIpAddress);
 
-
             httpContext.Response.SetSseHeaders();
 
             using var subscriber = broadcaster.Subscribe(httpContext.TraceIdentifier);

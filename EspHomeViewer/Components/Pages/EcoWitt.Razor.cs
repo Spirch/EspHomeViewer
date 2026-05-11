@@ -24,8 +24,12 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
     protected override void OnParametersSet()
     {
         eventSubscriber = ChannelSubscriber.Subscribe(this);
+        ListenEventSubscriber();
+    }
 
-        _ = Task.Run(async () => 
+    private void ListenEventSubscriber()
+    {
+        _ = Task.Run(async () =>
         {
             weatherDataCT = new CancellationTokenSource();
             try
@@ -66,7 +70,7 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
 
     public void Dispose()
     {
-        weatherDataCT.Cancel();
-        eventSubscriber.Dispose();
+        weatherDataCT?.Cancel();
+        eventSubscriber?.Dispose();
     }
 }

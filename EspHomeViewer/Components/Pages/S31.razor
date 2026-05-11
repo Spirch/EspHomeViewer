@@ -24,7 +24,7 @@
                         @group.Title
                     </ContextMenuTrigger>
                 </td>
-                <td><TotalOutput GroupInfo="@group.Name" Unit="@group.Unit" Subscriber="subscriber" /></td>
+                <td><TotalOutput GroupInfo="@group.Name" Unit="@group.Unit" ChannelSubscriberUpdate=ChannelSubscriberUpdate /></td>
             </tr>
         }
     </tbody>
@@ -53,7 +53,7 @@
                 </td>
                 @foreach (var status in EspHomeData.EsphomeOptions.StatusInfo.Where(x => !x.Hidden))
                 {
-                    <td><SingleInput DeviceName="@device.DeviceName" Name="@status.Name" Unit="@status.Unit" Subscriber="subscriber" /></td>
+                    <td><SingleInput DeviceName="@device.DeviceName" Name="@status.Name" Unit="@status.Unit" ChannelSubscriberUpdate=ChannelSubscriberUpdate /></td>
                 }
             </tr>
         }

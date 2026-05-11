@@ -1,4 +1,5 @@
 ﻿using BlazorContextMenu;
+using ChannelLib;
 using EspHomeLib;
 using EspHomeLib.Dto;
 using EspHomeLib.Interface;
@@ -11,36 +12,28 @@ using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Pages;
 
-public partial class S31 : IProcessEventSubscriber, IDisposable
+public partial class S31 : IDisposable
 {
     [Inject]
     private EspHomeData EspHomeData { get; set; }
 
     [Inject]
-    private ProcessEvent ProcessEvent { get; set; }
-
-    [Inject]
-    private ILogger<S31> Logger { get; set; }
-
-    [Inject]
     private GraphServices GraphServices { get; set; }
 
+    [Inject]
+    private EventBroadcaster<IEspHomeUpdate, string> ChannelSubscriberUpdate { get; set; }
 
     [Inject] 
     IJSRuntime JS { get; set; }
 
-    private Subscriber subscriber;
-
     public void Dispose()
     {
         EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
-        ProcessEvent.Unsubscribe(this);
     }
 
     protected override void OnParametersSet()
     {
         EspHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
-        subscriber = ProcessEvent.Subscribe(this);
     }
 
     private void OnEspHomeOptionChanged(object? sender, EventArgs e)

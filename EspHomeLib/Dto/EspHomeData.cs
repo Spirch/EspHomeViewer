@@ -1,4 +1,7 @@
-﻿using EspHomeLib.Option;
+﻿using ChannelLib;
+using EspHomeLib.Helper;
+using EspHomeLib.Interface;
+using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -18,6 +21,8 @@ public class EspHomeData : IDisposable
     private readonly ILogger<EspHomeData> _logger;
     private readonly SemaphoreSlim handleOnOptionChanged = new(1, 1);
     private readonly CancellationTokenSource cancellationTokenSource = new();
+    private readonly EventBroadcaster<EspEvent, IChannelSubscriber> _channelSubscriberEspEvent;
+    private readonly EventBroadcaster<IEspHomeUpdate, string> _channelSubscriberUpdate;
     private int _disposed; // 0 = false, 1 = true
 
     private record EspHomeSnapshot(FrozenDictionary<string, ProcessOption> MergeInfo,
@@ -27,9 +32,13 @@ public class EspHomeData : IDisposable
     private volatile EspHomeSnapshot _snapshot;
 
     public EspHomeData(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+                       EventBroadcaster<EspEvent, IChannelSubscriber> channelSubscriber,
+                       EventBroadcaster<IEspHomeUpdate, string> channelSubscriberUpdate,
                        ILogger<EspHomeData> logger)
     {
         _logger = logger;
+        _channelSubscriberEspEvent = channelSubscriber;
+        _channelSubscriberUpdate = channelSubscriberUpdate;
 
         RefreshFrozenDictionary(esphomeOptionsMonitor.CurrentValue);
 
@@ -71,12 +80,12 @@ public class EspHomeData : IDisposable
             {
                 OnEspHomeOptionChanged(this, EventArgs.Empty);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "{Class} OnOptionChanged OnEspHomeOptionChanged Exception", nameof(EspHomeData));
             }
         }
-        catch(OperationCanceledException) 
+        catch (OperationCanceledException)
         {
             // do nothing
         }
@@ -87,7 +96,7 @@ public class EspHomeData : IDisposable
         }
         finally
         {
-            if(waitAcquired && Volatile.Read(ref _disposed) == 0)
+            if (waitAcquired && Volatile.Read(ref _disposed) == 0)
             {
                 try
                 {
@@ -127,6 +136,25 @@ public class EspHomeData : IDisposable
         return sumValue;
     }
 
+    public void UpdateData(EspEvent espEvent)
+    {
+        espEvent.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+        _channelSubscriberEspEvent.Broadcast(espEvent);
+
+        if (_snapshot.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
+            _snapshot.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
+        {
+            friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
+            friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;
+
+            _channelSubscriberUpdate.Broadcast($"{friendlyDisplay.DeviceName}.{friendlyDisplay.Name}", null);
+            if(!string.IsNullOrEmpty(friendlyDisplay.GroupInfo))
+            {
+                _channelSubscriberUpdate.Broadcast(friendlyDisplay.GroupInfo, null);
+            }
+        }
+    }
+
     private void RefreshFrozenDictionary(EsphomeOptions currentValue)
     {
         //cartesian on purpose
@@ -144,12 +172,12 @@ public class EspHomeData : IDisposable
                          }).ToFrozenDictionary(k => k.key, v => v.processOption);
 
         var dataDisplay = mergeInfo.Select(x => new FriendlyDisplay()
-                                    {
-                                        DeviceName = x.Value.DeviceInfo.DeviceName,
-                                        Name = x.Value.StatusInfo.Name,
-                                        Unit = x.Value.StatusInfo.Unit,
-                                        GroupInfo = x.Value.DeviceInfo.IgnoreGroup ? null : x.Value.StatusInfo.GroupInfoName,
-                                    })
+        {
+            DeviceName = x.Value.DeviceInfo.DeviceName,
+            Name = x.Value.StatusInfo.Name,
+            Unit = x.Value.StatusInfo.Unit,
+            GroupInfo = x.Value.DeviceInfo.IgnoreGroup ? null : x.Value.StatusInfo.GroupInfoName,
+        })
                                     .ToDictionary(k => (k.DeviceName, k.Name));
 
         var existingDisplay = _snapshot?.DataDisplay;

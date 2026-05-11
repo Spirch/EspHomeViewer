@@ -1,12 +1,14 @@
-﻿using EspHomeLib.Dto;
+﻿using ChannelLib;
+using EspHomeLib.Dto;
 using EspHomeLib.Interface;
 using Microsoft.AspNetCore.Components;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Control;
 
-public partial class SingleInput : IEventCanReceive
+public partial class SingleInput : IEspHomeUpdate, IDisposable
 {
     [Inject]
     private EspHomeData EspHomeData { get; set; }
@@ -21,7 +23,10 @@ public partial class SingleInput : IEventCanReceive
     public string Unit { get; set; }
 
     [Parameter, EditorRequired]
-    public Subscriber Subscriber { get; set; }
+    public EventBroadcaster<IEspHomeUpdate, string> ChannelSubscriberUpdate { get; set; }
+
+    private EventSubscriber<IEspHomeUpdate> channelSubscriber;
+    private CancellationTokenSource channelSubscriberCT;
 
     private decimal? Data { get; set; }
     private DateTime? LastUpdate { get; set; }
@@ -33,29 +38,41 @@ public partial class SingleInput : IEventCanReceive
         Data = friendlyDisplay?.Data;
         LastUpdate = friendlyDisplay?.LastUpdate;
 
-        Subscriber.EventSingleCanReceives.TryAdd((DeviceName, Name), this);
+        channelSubscriber = ChannelSubscriberUpdate.Subscribe($"{DeviceName}.{Name}");
+        ListenEventSubscriber();
     }
 
-    public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
+    private void ListenEventSubscriber()
     {
-        Data = friendlyDisplay?.Data;
-        LastUpdate = friendlyDisplay?.LastUpdate;
+        _ = Task.Run(async () =>
+        {
+            channelSubscriberCT = new CancellationTokenSource();
+            try
+            {
+                await foreach (var message in channelSubscriber.Reader.ReadAllAsync(channelSubscriberCT.Token))
+                {
+                    await UpdateData();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+    }
+
+    private async Task UpdateData()
+    {
+        var display = EspHomeData.TryGetData(DeviceName, Name);
+
+        Data = display?.Data;
+        LastUpdate = display?.LastUpdate;
 
         await InvokeAsync(StateHasChanged);
     }
 
-    public async Task ReceiveDataAsync(Exception exception, Uri uri)
+    public void Dispose()
     {
-        await Task.CompletedTask;
-    }
-
-    public async Task ReceiveDataAsync(string rawMessage)
-    {
-        await Task.CompletedTask;
-    }
-
-    public async Task ReceiveRawDataAsync(EspEvent espEvent)
-    {
-        await Task.CompletedTask;
+        channelSubscriberCT?.Cancel();
+        channelSubscriber?.Dispose();
     }
 }

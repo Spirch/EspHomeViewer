@@ -1,12 +1,13 @@
-﻿using EspHomeLib.Database;
+﻿using ChannelLib;
+using EspHomeLib.Database;
 using EspHomeLib.Database.Model;
 using EspHomeLib.Dto;
-using EspHomeLib.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
@@ -14,34 +15,37 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib.HostedServices;
-public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCanReceive, IDisposable
+public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
 {
     private readonly EspHomeData _espHomeData;
 
     private readonly ILogger<DatabaseManager> _logger;
-    private readonly ProcessEvent _processEvent;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly BlockingCollection<IDbItem> Queue = new();
 
+    private readonly EventSubscriber<EspEvent> eventSubscriberEspEvent;
+    private readonly EventSubscriber<Exception> eventSubscriberException;
+    private readonly CancellationTokenSource eventSubscriberCT = new();
+
     private readonly ConcurrentDictionary<string, RecordData> recordData = new();
 
-    private readonly Subscriber subscriber;
     private Task runningInstance;
 
-    public DatabaseManager(ProcessEvent processEvent, 
+    public DatabaseManager(EventBroadcaster<EspEvent, IChannelSubscriber> channelSubscriberEspEvent,
+                           EventBroadcaster<Exception, IChannelSubscriber> channelSubscriberException,
                            EspHomeData espHomeData,
                            IServiceScopeFactory serviceScopeFactory,
                            ILogger<DatabaseManager> logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
-        _processEvent = processEvent;
         _logger = logger;
         _espHomeData = espHomeData;
 
         InitOption();
 
-        subscriber = _processEvent.Subscribe(this);
-        subscriber.OnEvent = this;
+        eventSubscriberEspEvent = channelSubscriberEspEvent.Subscribe(this);
+        eventSubscriberException = channelSubscriberException.Subscribe(this);
+        SubscriberReader();
 
         _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
     }
@@ -198,7 +202,8 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
                     }
                     catch (Exception e)
                     {
-                        await HandleErrorAsync(e, "EspHomeContext.RunAndProcess.Run");
+                        e.Data.Add("source", "EspHomeContext.RunAndProcess.Run");
+                        await HandleErrorAsync(e);
 
                         await Task.Delay(5000);
                     }
@@ -206,17 +211,44 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
             }
             catch (Exception e)
             {
-                await HandleErrorAsync(e, "EspHomeContext.RunAndProcess");
+                e.Data.Add("source", "EspHomeContext.RunAndProcess");
+                await HandleErrorAsync(e);
 
                 await Task.Delay(5000);
             }
         }
     }
 
-    public async Task ReceiveRawDataAsync(EspEvent espEvent)
+    private void SubscriberReader()
     {
-        await HandleSingleEvent(espEvent);
-        await HandleGroupEvent(espEvent);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await foreach (var espEvent in eventSubscriberEspEvent.Reader.ReadAllAsync(eventSubscriberCT.Token))
+                {
+                    await HandleSingleEvent(espEvent);
+                    await HandleGroupEvent(espEvent);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await foreach (var ex in eventSubscriberException.Reader.ReadAllAsync(eventSubscriberCT.Token))
+                {
+                    await HandleErrorAsync(ex);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
     }
 
     private async Task HandleSingleEvent(EspEvent espEvent)
@@ -294,38 +326,32 @@ public class DatabaseManager : IHostedService, IProcessEventSubscriber, IEventCa
         await Task.CompletedTask;
     }
 
-    public async Task ReceiveDataAsync(Exception exception, Uri uri)
+    private async Task HandleErrorAsync(Exception e)
     {
-        await HandleErrorAsync(exception, uri.ToString());
-        await Task.CompletedTask;
-    }
+        string data = string.Empty;
+        if(e.Data?.Count > 0)
+        {
+            foreach (DictionaryEntry d in e.Data)
+            {
+                data += $"{d.Key}:{d.Value} ";
+            }
+        }
 
-    public async Task HandleErrorAsync(Exception e, string source, string message = null)
-    {
         await InsertErrorAsync(new Error()
         {
             Date = DateTime.Now.ToString(_espHomeData.EsphomeOptions.SseClient.DateTimeFormat),
-            DeviceName = source,
+            DeviceName = data,
             Exception = e.ToString(),
-            Message = message ?? e.Message
+            Message = e.Message
         });
-    }
-
-    public async Task ReceiveDataAsync(FriendlyDisplay friendlyDisplay)
-    {
-        await Task.CompletedTask;
-    }
-
-    public async Task ReceiveDataAsync(string rawMessage)
-    {
-        await Task.CompletedTask;
     }
 
     public void Dispose()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
 
-        _processEvent.Unsubscribe(this);
+        eventSubscriberEspEvent.Dispose();
+        eventSubscriberException.Dispose();
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));

@@ -1,10 +1,13 @@
-﻿using EspHomeLib.Database;
+﻿using ChannelLib;
+using EspHomeLib.Database;
 using EspHomeLib.Dto;
 using EspHomeLib.HostedServices;
+using EspHomeLib.Interface;
 using EspHomeLib.Option;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Net;
 using System.Net.Sockets;
 
@@ -14,6 +17,10 @@ public static class AddEspHomeLib
     public static IServiceCollection AddSseManager(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<EsphomeOptions>(configuration.GetSection("EsphomeOptions"));
+
+        services.AddSingleton<EventBroadcaster<Exception, IChannelSubscriber>>();
+        services.AddSingleton<EventBroadcaster<EspEvent, IChannelSubscriber>>();
+        services.AddSingleton<EventBroadcaster<IEspHomeUpdate, string>>();
         services.AddSingleton<EspHomeData>();
 
         services.AddHttpClient("sseClient").UseSocketsHttpHandler((handler, _) =>
@@ -38,7 +45,6 @@ public static class AddEspHomeLib
             });
 
         services.AddTransient<SseClient>();
-        services.AddSingleton<ProcessEvent>();
         services.AddHostedService<SseClientManager>();
 
         return services;

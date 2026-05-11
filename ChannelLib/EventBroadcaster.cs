@@ -57,6 +57,19 @@ public sealed class EventBroadcaster<TMessage, TClientId> : IDisposable where TC
         return false;
     }
 
+    public void Broadcast(TClientId clientId, TMessage message)
+    {
+        CheckIfDisposed();
+
+        if(_clients.TryGetValue(clientId, out var channel))
+        {
+            if (!channel.Writer.TryWrite(message))
+            {
+                _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), clientId);
+            }
+        }
+    }
+
     public void Broadcast(TMessage message)
     {
         CheckIfDisposed();

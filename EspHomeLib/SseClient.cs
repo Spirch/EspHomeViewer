@@ -17,8 +17,8 @@ public class SseClient : IDisposable
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EspHomeData _espHomeData;
-    private readonly ProcessEvent _processEvent;
-    private readonly EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> _channelSubscriber;
+    private readonly EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> _channelSubscriberEcoWitt;
+    private readonly EventBroadcaster<Exception, IChannelSubscriber> _channelSubscriberException;
     private readonly ILogger<SseClient> _logger;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -36,8 +36,8 @@ public class SseClient : IDisposable
 
     public SseClient(IHttpClientFactory httpClientFactory,
                      EspHomeData espHomeData,
-                     ProcessEvent processEvent,
-                     EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> channelSubscriber,
+                     EventBroadcaster<Dictionary<string, string>, IChannelSubscriber> channelSubscriberEcoWitt,
+                     EventBroadcaster<Exception, IChannelSubscriber> channelSubscriberException,
                      ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
@@ -46,8 +46,8 @@ public class SseClient : IDisposable
 
         _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
 
-        _processEvent = processEvent;
-        _channelSubscriber = channelSubscriber;
+        _channelSubscriberEcoWitt = channelSubscriberEcoWitt;
+        _channelSubscriberException = channelSubscriberException;
     }
 
     private void OnEspHomeOptionChanged(object? sender, EventArgs e)
@@ -96,11 +96,9 @@ public class SseClient : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    var onEventReceived = _processEvent;
-                    if (onEventReceived != null)
-                    {
-                        await onEventReceived.SendAsync(ex, _uri);
-                    }
+                    ex.Data.Add("source", _uri);
+                    _channelSubscriberException.Broadcast(ex);
+
                     await Task.Delay(_espHomeData.EsphomeOptions.SseClient.PingDelay * 1000, cancellationTokenSource.Token);
                 }
             }
@@ -128,11 +126,9 @@ public class SseClient : IDisposable
         }
         catch (Exception ex)
         {
-            var onEventReceived = _processEvent;
-            if (onEventReceived != null)
-            {
-                await onEventReceived.SendAsync(ex, _uri);
-            }
+            ex.Data.Add("source", _uri);
+            _channelSubscriberException.Broadcast(ex);
+
             result = false;
         }
         finally
@@ -156,7 +152,6 @@ public class SseClient : IDisposable
             return str;
         });
 
-        //todo: remove if not useful in the future
         using var timeoutTokenSource = new CancellationTokenSource();
         timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
 
@@ -177,13 +172,7 @@ public class SseClient : IDisposable
 
                 var espEvent = JsonSerializer.Deserialize<EspEvent>(item.Data, jsonOptions);
 
-                espEvent.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
-
-                var onEventReceivedJson = _processEvent;
-                if (onEventReceivedJson != null)
-                {
-                    await onEventReceivedJson.SendAsync(espEvent, _uri);
-                }
+                _espHomeData.UpdateData(espEvent);
             }
             else if(string.Equals(item.EventType, "weather", StringComparison.OrdinalIgnoreCase))
             {
@@ -191,7 +180,7 @@ public class SseClient : IDisposable
 
                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
 
-                _channelSubscriber.Broadcast(dict);
+                _channelSubscriberEcoWitt.Broadcast(dict);
             }
         }
 
