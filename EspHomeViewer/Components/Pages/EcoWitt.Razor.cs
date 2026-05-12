@@ -31,9 +31,10 @@ public partial class EcoWitt : IChannelSubscriber<string>, IDisposable
 
     private void ListenEventSubscriber()
     {
+        weatherDataCT = new CancellationTokenSource();
+
         _ = Task.Run(async () =>
         {
-            weatherDataCT = new CancellationTokenSource();
             try
             {
                 await foreach (var message in eventSubscriber.Reader.ReadAllAsync(weatherDataCT.Token))

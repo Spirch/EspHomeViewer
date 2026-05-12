@@ -49,9 +49,10 @@ public partial class SingleInput : IChannelSubscriber<string>, IEspHomeUpdate, I
 
     private void ListenEventSubscriber()
     {
+        channelSubscriberCT = new CancellationTokenSource();
+
         _ = Task.Run(async () =>
         {
-            channelSubscriberCT = new CancellationTokenSource();
             try
             {
                 await foreach (var message in channelSubscriber.Reader.ReadAllAsync(channelSubscriberCT.Token))
