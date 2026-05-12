@@ -211,8 +211,6 @@ public class EspHomeData : IDisposable
         handleOnOptionChanged.Dispose();
         cancellationTokenSource.Dispose();
 
-        GC.SuppressFinalize(this);
-
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(EspHomeData));
     }
 }
