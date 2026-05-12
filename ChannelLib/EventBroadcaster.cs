@@ -19,6 +19,8 @@ public sealed class EventBroadcaster<TMessage, TClientId> : IDisposable where TC
 
     private readonly ConcurrentDictionary<TClientId, Channel<TMessage>> _clients = new();
 
+    public bool IsAlreadySubscribed(TClientId client) => _clients.ContainsKey(client);
+
     public EventSubscriber<TMessage> Subscribe(TClientId client)
     {
         CheckIfDisposed();

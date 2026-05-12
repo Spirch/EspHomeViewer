@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Components;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace EspHomeViewer.Components.Control;
 
@@ -36,8 +35,11 @@ public partial class TotalOutput : IChannelSubscriber<string>, IEspHomeUpdate, I
         Data = EspHomeData.TryGetSumValue(GroupInfo);
         LastUpdate = DateTime.Now;
 
-        channelSubscriber = ChannelSubscriberUpdate.Subscribe(this);
-        ListenEventSubscriber();
+        if (!ChannelSubscriberUpdate.IsAlreadySubscribed(this))
+        {
+            channelSubscriber = ChannelSubscriberUpdate.Subscribe(this);
+            ListenEventSubscriber();
+        }
     }
 
     private void ListenEventSubscriber()

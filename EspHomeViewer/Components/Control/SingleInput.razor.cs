@@ -40,8 +40,11 @@ public partial class SingleInput : IChannelSubscriber<string>, IEspHomeUpdate, I
         Data = friendlyDisplay?.Data;
         LastUpdate = friendlyDisplay?.LastUpdate;
 
-        channelSubscriber = ChannelSubscriberUpdate.Subscribe(this);
-        ListenEventSubscriber();
+        if(!ChannelSubscriberUpdate.IsAlreadySubscribed(this))
+        {
+            channelSubscriber = ChannelSubscriberUpdate.Subscribe(this);
+            ListenEventSubscriber();
+        }
     }
 
     private void ListenEventSubscriber()

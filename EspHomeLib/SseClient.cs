@@ -1,6 +1,5 @@
 ﻿using ChannelLib;
 using EspHomeLib.Dto;
-using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -96,6 +95,7 @@ public class SseClient : IDisposable
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "{Class} StartMonitoringAsync Exception", nameof(SseClient));
                     ex.Data.Add("source", _uri);
                     _channelSubscriberException.Broadcast(ex);
 
@@ -126,6 +126,7 @@ public class SseClient : IDisposable
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Class} PingAsync Exception", nameof(SseClient));
             ex.Data.Add("source", _uri);
             _channelSubscriberException.Broadcast(ex);
 

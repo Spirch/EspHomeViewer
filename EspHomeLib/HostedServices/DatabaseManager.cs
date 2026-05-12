@@ -204,6 +204,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
                     }
                     catch (Exception e)
                     {
+                        _logger.LogError(e, "{Class} EspHomeContext.RunAndProcess.Run Exception", nameof(DatabaseManager));
                         e.Data.Add("source", "EspHomeContext.RunAndProcess.Run");
                         await HandleErrorAsync(e);
 
@@ -213,6 +214,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "{Class} EspHomeContext.RunAndProcess Exception", nameof(DatabaseManager));
                 e.Data.Add("source", "EspHomeContext.RunAndProcess");
                 await HandleErrorAsync(e);
 
