@@ -19,7 +19,7 @@ public class MinimalApi
             //todo port in config
             if(httpContext.Connection.LocalPort == 5163)
             {
-                //logger.LogInformation("Post from {ip}", httpContext.Connection.RemoteIpAddress);
+                if (logger.IsEnabled(LogLevel.Debug)) logger.LogDebug("Post from {ip}", httpContext.Connection.RemoteIpAddress);
 
                 try
                 {
@@ -49,7 +49,7 @@ public class MinimalApi
                                      EventBroadcaster<EcoWittSse, string> broadcaster,
                                      CancellationToken ct) =>
         {
-            logger.LogInformation("Get Stream from {ip}", httpContext.Connection.RemoteIpAddress);
+            if (logger.IsEnabled(LogLevel.Information)) logger.LogInformation("Get Stream from {ip}", httpContext.Connection.RemoteIpAddress);
 
             httpContext.Response.SetSseHeaders();
 
@@ -64,10 +64,9 @@ public class MinimalApi
             }
             catch (OperationCanceledException)
             {
-                //broadcaster.Unsubscribe(httpContext.TraceIdentifier);
             }
 
-            logger.LogInformation("Close Stream from {ip}", httpContext.Connection.RemoteIpAddress);
+            if (logger.IsEnabled(LogLevel.Information)) logger.LogInformation("Close Stream from {ip}", httpContext.Connection.RemoteIpAddress);
         });
     }
 }

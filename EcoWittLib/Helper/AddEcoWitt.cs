@@ -22,7 +22,6 @@ public static class AddEcoWittLib
         var broadcast = app.Services.GetRequiredService<EventBroadcaster<EcoWittSse, string>>();
         var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 
-        //todo add CancellationToken
         await SseHelper.StartPingAsync(broadcast, lifetime.ApplicationStopping);
 
         return app;

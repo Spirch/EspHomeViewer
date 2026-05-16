@@ -69,7 +69,7 @@ public sealed class EventBroadcaster<TMessage, TClientId> : IDisposable where TC
             {
                 if (!channel.Writer.TryWrite(message))
                 {
-                    _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), channelNameId);
+                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), channelNameId);
                 }
             }
         }
@@ -83,7 +83,7 @@ public sealed class EventBroadcaster<TMessage, TClientId> : IDisposable where TC
         {
             if(!channel.Writer.TryWrite(message))
             {
-                _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), key);
+                if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), key);
             }
         }
     }

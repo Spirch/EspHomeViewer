@@ -31,8 +31,6 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
 
     private readonly ConcurrentQueue<IDbItem> record = new();
 
-    private Task runningInstance;
-
     public string ChannelNameId => nameof(DatabaseManager);
 
     public DatabaseManager(EventBroadcaster<EspEvent, IChannelSubscriber<string>> channelSubscriberEspEvent,
@@ -52,8 +50,6 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
         SubscriberReader();
 
         _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
-
-        DealWithDb();
     }
 
     private void OnEspHomeOptionChanged(object? sender, EventArgs e)
@@ -160,7 +156,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(DatabaseManager));
 
-        //runningInstance = RunAndProcessAsync();
+        DealWithDb();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(DatabaseManager));
 
@@ -171,7 +167,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(DatabaseManager));
 
-        //Queue.CompleteAdding();
+        eventSubscriberCT.Cancel();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(DatabaseManager));
 
@@ -182,37 +178,45 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     {
         _ = Task.Run(async () =>
         {
-            try
+            while(!eventSubscriberCT.IsCancellationRequested)
             {
-                var swCleanup = Stopwatch.StartNew();
-                using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
-
-                while (await timer.WaitForNextTickAsync(eventSubscriberCT.Token))
+                try
                 {
-                    if(record.IsEmpty)
+                    var swCleanup = Stopwatch.StartNew();
+                    using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
+
+                    while (await timer.WaitForNextTickAsync(eventSubscriberCT.Token))
                     {
-                        continue;
-                    }
+                        if (record.IsEmpty)
+                        {
+                            continue;
+                        }
 
-                    using var scope = _serviceScopeFactory.CreateScope();
-                    using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+                        using var scope = _serviceScopeFactory.CreateScope();
+                        using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
 
-                    while (record.TryDequeue(out var item))
-                    {
-                        efContext.Add(item);
-                    }
+                        while (record.TryDequeue(out var item))
+                        {
+                            efContext.Add(item);
+                        }
 
-                    await efContext.SaveChangesAsync();
+                        await efContext.SaveChangesAsync();
 
-                    if (swCleanup.Elapsed.TotalHours > 6)
-                    {
-                        await efContext.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
-                        swCleanup.Restart();
+                        if (swCleanup.Elapsed.TotalHours > 6)
+                        {
+                            await efContext.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+                            swCleanup.Restart();
+                        }
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
+                catch (OperationCanceledException)
+                {
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError(ex, "DealWithDb");
+                    await Task.Delay(10000);
+                }
             }
         }, eventSubscriberCT.Token);
     }
@@ -225,8 +229,8 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
             {
                 await foreach (var espEvent in eventSubscriberEspEvent.Reader.ReadAllAsync(eventSubscriberCT.Token))
                 {
-                    await HandleSingleEvent(espEvent);
-                    await HandleGroupEvent(espEvent);
+                    HandleSingleEvent(espEvent);
+                    HandleGroupEvent(espEvent);
                 }
             }
             catch (OperationCanceledException)
@@ -249,7 +253,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
         }, eventSubscriberCT.Token);
     }
 
-    private async Task HandleSingleEvent(EspEvent espEvent)
+    private void HandleSingleEvent(EspEvent espEvent)
     {
         var newEvent = new Event(espEvent);
 
@@ -279,12 +283,9 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
         {
             if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} HandleSingleEvent missing {SourceId}", nameof(DatabaseManager), newEvent.SourceId);
         }
-
-
-        await Task.CompletedTask;
     }
 
-    private async Task HandleGroupEvent(EspEvent espEvent)
+    private void HandleGroupEvent(EspEvent espEvent)
     {
         if (_espHomeData.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
             processOption.GroupInfo != null)
@@ -313,15 +314,6 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
                 if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} HandleGroupEvent missing {SourceId}", nameof(DatabaseManager), newEvent.SourceId);
             }
         }
-
-        await Task.CompletedTask;
-    }
-
-    private async Task InsertErrorAsync(Error error)
-    {
-        record.Enqueue(error);
-
-        await Task.CompletedTask;
     }
 
     private async Task HandleErrorAsync(Exception e)
@@ -335,7 +327,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
             }
         }
 
-        await InsertErrorAsync(new Error()
+        record.Enqueue(new Error()
         {
             Date = DateTime.Now.ToString(_espHomeData.EsphomeOptions.SseClient.DateTimeFormat),
             DeviceName = data,

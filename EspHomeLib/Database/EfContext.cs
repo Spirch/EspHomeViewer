@@ -92,7 +92,6 @@ public sealed class EfContext : DbContext
 
             using var test = new EfContext(optionsBuilder.Options);
 
-            test.Database.EnsureDeleted();
             test.Database.EnsureCreated();
 
             test.Database.OpenConnection();
