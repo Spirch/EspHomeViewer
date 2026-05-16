@@ -1,25 +1,23 @@
 ﻿using ChannelLib;
 using Microsoft.AspNetCore.Http;
+using System.Text;
 
 namespace EcoWittLib.Helper;
 
 public static class SseHelper
 {
-    private static readonly PeriodicTimer ping = new(TimeSpan.FromSeconds(30));
-    public static async Task StartPingAsync(EventBroadcaster<EcoWittSse, string> broadcast)
+    public static async Task StartPingAsync(EventBroadcaster<EcoWittSse, string> broadcast, CancellationToken ct)
     {
         if (broadcast != null)
         {
             _ = Task.Run(async () =>
             {
-                while (true)
+                using PeriodicTimer ping = new(TimeSpan.FromSeconds(30));
+                while (await ping.WaitForNextTickAsync(ct))
                 {
-                    if (await ping.WaitForNextTickAsync())
-                    {
-                        broadcast.Broadcast(EcoWittSse.Create("keepalive", "ping"));
-                    }
+                    broadcast.Broadcast(EcoWittSse.Create("keepalive", "ping"));
                 }
-            });
+            }, ct);
         }
     }
 
@@ -27,16 +25,15 @@ public static class SseHelper
                                              EcoWittSse message,
                                              CancellationToken ct = default)
     {
-        await response.WriteAsync($"id: {message.Id}\n", ct);
-        await response.WriteAsync($"event: {message.EventType}\n", ct);
-
-        // Handle multi-line data
+        var sb = new StringBuilder();
+        sb.Append($"id: {message.Id}\n");
+        sb.Append($"event: {message.EventType}\n");
         foreach (var line in message.Data.Split('\n'))
         {
-            await response.WriteAsync($"data: {line}\n", ct);
+            sb.Append($"data: {line}\n");
         }
-
-        await response.WriteAsync("\n", ct);
+        sb.Append('\n');
+        await response.WriteAsync(sb.ToString(), ct);
         await response.Body.FlushAsync(ct);
     }
 

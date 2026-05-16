@@ -12,16 +12,16 @@ public static class HelperMethod
             ("windspeedmph", "windspeedkmh", (from) => MphtoKmh(from)),
             ("windgustmph", "windgustkmh", (from) => MphtoKmh(from)),
             ("maxdailygust", "maxdailykmh", (from) => MphtoKmh(from)),
-            ("rrain_piezo", "rrain_piezomm", (from) => IntoCm(from)),
-            ("erain_piezo", "erain_piezomm", (from) => IntoCm(from)),
-            ("hrain_piezo", "hrain_piezomm", (from) => IntoCm(from)),
-            ("drain_piezo", "drain_piezomm", (from) => IntoCm(from)),
-            ("wrain_piezo", "wrain_piezomm", (from) => IntoCm(from)),
-            ("mrain_piezo", "mrain_piezomm", (from) => IntoCm(from)),
-            ("yrain_piezo", "yrain_piezomm", (from) => IntoCm(from))
+            ("rrain_piezo", "rrain_piezomm", (from) => IntoMm(from)),
+            ("erain_piezo", "erain_piezomm", (from) => IntoMm(from)),
+            ("hrain_piezo", "hrain_piezomm", (from) => IntoMm(from)),
+            ("drain_piezo", "drain_piezomm", (from) => IntoMm(from)),
+            ("wrain_piezo", "wrain_piezomm", (from) => IntoMm(from)),
+            ("mrain_piezo", "mrain_piezomm", (from) => IntoMm(from)),
+            ("yrain_piezo", "yrain_piezomm", (from) => IntoMm(from))
         ];
 
-    private static readonly string[] caridnals = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"];
+    private static readonly string[] cardinals = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"];
 
     private static readonly string[] removeItem = ["PASSKEY", "stationtype", "model", "heap", "ws90_ver", "freq", "interval", "dateutc"];
 
@@ -88,17 +88,17 @@ public static class HelperMethod
         return kmh.ToString("0.00");
     }
 
-    public static string IntoCm(this decimal inch)
+    public static string IntoMm(this decimal inch)
     {
-        var cm = inch * 25.4m;
+        var mm = inch * 25.4m;
 
-        return cm.ToString("0.000");
+        return mm.ToString("0.000");
     }
 
     public static string DegreesToCardinalDetailed(this decimal degrees)
     {
         degrees *= 10;
         
-        return caridnals[(int)Math.Round((degrees % 3600) / 225)];
+        return cardinals[(int)Math.Round((degrees % 3600) / 225)];
     }
 }

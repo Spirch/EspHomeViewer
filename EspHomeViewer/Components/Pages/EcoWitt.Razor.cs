@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,15 +19,18 @@ public partial class EcoWitt : IChannelSubscriber<string>, IDisposable
 
     public string ChannelNameId => nameof(EcoWitt);
 
-    private readonly Dictionary<string, string> weatherData = new();
+    private readonly ConcurrentDictionary<string, string> weatherData = new();
 
     private EventSubscriber<Dictionary<string, string>> eventSubscriber;
     private CancellationTokenSource weatherDataCT;
 
     protected override void OnParametersSet()
     {
-        eventSubscriber = ChannelSubscriber.Subscribe(this);
-        ListenEventSubscriber();
+        if (!ChannelSubscriber.IsAlreadySubscribed(this))
+        {
+            eventSubscriber = ChannelSubscriber.Subscribe(this);
+            ListenEventSubscriber();
+        }
     }
 
     private void ListenEventSubscriber()

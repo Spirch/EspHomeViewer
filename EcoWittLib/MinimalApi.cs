@@ -16,6 +16,7 @@ public class MinimalApi
                                                ILogger<MinimalApi> logger,
                                                EventBroadcaster<EcoWittSse, string> broadcaster) =>
         {
+            //todo port in config
             if(httpContext.Connection.LocalPort == 5163)
             {
                 //logger.LogInformation("Post from {ip}", httpContext.Connection.RemoteIpAddress);
@@ -32,7 +33,7 @@ public class MinimalApi
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    logger.LogError(ex, "MinimalApi weatherforecast");
                 }
 
                 return Results.Ok();

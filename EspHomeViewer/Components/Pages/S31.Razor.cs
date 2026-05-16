@@ -33,6 +33,7 @@ public partial class S31 : IDisposable
 
     protected override void OnParametersSet()
     {
+        EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
         EspHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
     }
 
@@ -73,18 +74,24 @@ public partial class S31 : IDisposable
             if (!string.IsNullOrEmpty(name))
             {
                 var graph = await GraphServices.GraphAsync(name, data, day);
-                var fileName = string.Join("-", $"For-{day}-day-{data}-at-{DateTime.Now}.png".Split(Path.GetInvalidFileNameChars()));
 
-                await DownloadFileFromStream(graph, fileName);
+                if (graph != null)
+                {
+                    var fileName = string.Join("-", $"For-{day}-day-{data}-at-{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png".Split(Path.GetInvalidFileNameChars()));
+                    await DownloadFileFromStream(graph, fileName);
+                }
             }
         }
     }
 
     private async Task DownloadFileFromStream(byte[] data, string fileName)
     {
-        using var fileStream = new MemoryStream(data);
-        using var streamRef = new DotNetStreamReference(stream: fileStream);
+        if (data != null)
+        {
+            using var fileStream = new MemoryStream(data);
+            using var streamRef = new DotNetStreamReference(stream: fileStream);
 
-        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
     }
 }

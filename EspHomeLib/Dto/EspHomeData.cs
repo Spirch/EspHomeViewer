@@ -141,8 +141,9 @@ public class EspHomeData : IDisposable
         espEvent.UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds();
         _channelSubscriberEspEvent.Broadcast(espEvent);
 
-        if (_snapshot.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
-            _snapshot.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
+        var snapshot = _snapshot;
+        if (snapshot.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
+            snapshot.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
         {
             friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
             friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;

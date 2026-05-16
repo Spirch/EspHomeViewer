@@ -76,9 +76,16 @@ public class SseClientManager : IHostedService, IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} Start", nameof(SseClientManager), uri);
 
         var sseClient = _serviceProvider.GetRequiredService<SseClient>();
-        _sseClients[uri] = sseClient;
 
-        sseClient.Start(uri);
+        if (_sseClients.TryAdd(uri, sseClient))
+        {
+            _sseClients[uri] = sseClient;
+            sseClient.Start(uri);
+        }
+        else
+        {
+            sseClient.Dispose(); // don't need the new one
+        }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);
     }

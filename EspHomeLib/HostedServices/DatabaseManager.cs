@@ -15,19 +15,21 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib.HostedServices;
+
 public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisposable
 {
     private readonly EspHomeData _espHomeData;
 
     private readonly ILogger<DatabaseManager> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly BlockingCollection<IDbItem> Queue = new();
 
     private readonly EventSubscriber<EspEvent> eventSubscriberEspEvent;
     private readonly EventSubscriber<Exception> eventSubscriberException;
     private readonly CancellationTokenSource eventSubscriberCT = new();
 
     private readonly ConcurrentDictionary<string, RecordData> recordData = new();
+
+    private readonly ConcurrentQueue<IDbItem> record = new();
 
     private Task runningInstance;
 
@@ -50,6 +52,8 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
         SubscriberReader();
 
         _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
+
+        DealWithDb();
     }
 
     private void OnEspHomeOptionChanged(object? sender, EventArgs e)
@@ -78,8 +82,8 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
         foreach (var device in _espHomeData.MergeInfo)
         {
             RowEntry rowEntry = efContext.RowEntry
-                                         .FirstOrDefault(x => x.Name == device.Key &&
-                                                               x.FriendlyName == device.Value.DeviceInfo.DeviceName);
+                                            .FirstOrDefault(x => x.Name == device.Key &&
+                                                                x.FriendlyName == device.Value.DeviceInfo.DeviceName);
 
             if (rowEntry == null)
             {
@@ -141,7 +145,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
                 {
                     LastRecordSw = Stopwatch.StartNew(),
                 };
-                
+
                 recordData[rowEntry.Name] = data;
             }
 
@@ -156,7 +160,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(DatabaseManager));
 
-        runningInstance = RunAndProcessAsync();
+        //runningInstance = RunAndProcessAsync();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(DatabaseManager));
 
@@ -167,60 +171,50 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(DatabaseManager));
 
-        Queue.CompleteAdding();
+        //Queue.CompleteAdding();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(DatabaseManager));
 
         return Task.CompletedTask;
     }
 
-    private async Task RunAndProcessAsync()
+    private void DealWithDb()
     {
-        var swCleanup = Stopwatch.StartNew();
-
-        while (!Queue.IsCompleted)
+        _ = Task.Run(async () =>
         {
             try
             {
-                await Task.Run(async () =>
+                var swCleanup = Stopwatch.StartNew();
+                using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
+
+                while (await timer.WaitForNextTickAsync(eventSubscriberCT.Token))
                 {
-                    try
+                    if(record.IsEmpty)
                     {
-                        using var scope = _serviceScopeFactory.CreateScope();
-                        using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
-
-                        foreach (var dbItem in Queue.GetConsumingEnumerable())
-                        {
-                            await efContext.AddAsync(dbItem);
-                            await efContext.SaveChangesAsync();
-                            efContext.ChangeTracker.Clear();
-
-                            if(swCleanup.Elapsed.TotalHours > 24)
-                            {
-                                await efContext.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
-                                swCleanup.Restart();
-                            }
-                        }
+                        continue;
                     }
-                    catch (Exception e)
+
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+
+                    while (record.TryDequeue(out var item))
                     {
-                        _logger.LogError(e, "{Class} EspHomeContext.RunAndProcess.Run Exception", nameof(DatabaseManager));
-                        e.Data.Add("source", "EspHomeContext.RunAndProcess.Run");
-                        await HandleErrorAsync(e);
-
-                        await Task.Delay(5000);
+                        efContext.Add(item);
                     }
-                });
+
+                    await efContext.SaveChangesAsync();
+
+                    if (swCleanup.Elapsed.TotalHours > 6)
+                    {
+                        await efContext.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+                        swCleanup.Restart();
+                    }
+                }
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
-                _logger.LogError(e, "{Class} EspHomeContext.RunAndProcess Exception", nameof(DatabaseManager));
-                e.Data.Add("source", "EspHomeContext.RunAndProcess");
-                await HandleErrorAsync(e);
-
-                await Task.Delay(5000);
             }
-        }
+        }, eventSubscriberCT.Token);
     }
 
     private void SubscriberReader()
@@ -238,7 +232,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
             catch (OperationCanceledException)
             {
             }
-        });
+        }, eventSubscriberCT.Token);
 
         _ = Task.Run(async () =>
         {
@@ -252,14 +246,14 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
             catch (OperationCanceledException)
             {
             }
-        });
+        }, eventSubscriberCT.Token);
     }
 
     private async Task HandleSingleEvent(EspEvent espEvent)
     {
         var newEvent = new Event(espEvent);
 
-        if(recordData.TryGetValue(newEvent.SourceId, out var data))
+        if (recordData.TryGetValue(newEvent.SourceId, out var data))
         {
             newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
 
@@ -270,7 +264,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
                     if (data.LastValue != newEvent.Data)
                     {
                         data.LastValue = newEvent.Data;
-                        Queue.Add(newEvent);
+                        record.Enqueue(newEvent);
                     }
 
                     data.LastRecordSw.Restart();
@@ -278,14 +272,14 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
             }
             else
             {
-                Queue.Add(newEvent);
+                record.Enqueue(newEvent);
             }
         }
         else
         {
             if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} HandleSingleEvent missing {SourceId}", nameof(DatabaseManager), newEvent.SourceId);
         }
-        
+
 
         await Task.CompletedTask;
     }
@@ -303,13 +297,13 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
                 IsGroup = true,
             };
 
-            if(recordData.TryGetValue(newEvent.SourceId, out var data))
+            if (recordData.TryGetValue(newEvent.SourceId, out var data))
             {
                 newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
 
                 if (data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
                 {
-                    Queue.Add(newEvent);
+                    record.Enqueue(newEvent);
 
                     data.LastRecordSw.Restart();
                 }
@@ -325,7 +319,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
 
     private async Task InsertErrorAsync(Error error)
     {
-        Queue.Add(error);
+        record.Enqueue(error);
 
         await Task.CompletedTask;
     }
@@ -333,7 +327,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     private async Task HandleErrorAsync(Exception e)
     {
         string data = string.Empty;
-        if(e.Data?.Count > 0)
+        if (e.Data?.Count > 0)
         {
             foreach (DictionaryEntry d in e.Data)
             {
@@ -354,6 +348,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
 
+        eventSubscriberCT?.Cancel();
         eventSubscriberEspEvent.Dispose();
         eventSubscriberException.Dispose();
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;

@@ -59,17 +59,17 @@ public sealed class EventBroadcaster<TMessage, TClientId> : IDisposable where TC
         return false;
     }
 
-    public void BroadcastByName(string ChannelNameId, TMessage message)
+    public void BroadcastByName(string channelNameId, TMessage message)
     {
         CheckIfDisposed();
 
-        foreach (var sub in _clients.Keys.Where(x => x is IChannelSubscriber<string> y && y.ChannelNameId == ChannelNameId))
+        foreach (var sub in _clients.Keys.Where(x => x is IChannelSubscriber<string> y && y.ChannelNameId == channelNameId))
         {
             if (_clients.TryGetValue(sub, out var channel))
             {
                 if (!channel.Writer.TryWrite(message))
                 {
-                    _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), ChannelNameId);
+                    _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), channelNameId);
                 }
             }
         }

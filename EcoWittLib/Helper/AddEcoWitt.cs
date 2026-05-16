@@ -1,10 +1,11 @@
 ﻿using ChannelLib;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace EcoWittLib.Helper;
 
-public static class AddEspHomeLib
+public static class AddEcoWittLib
 {
     public static IServiceCollection AddEcoWitt(this IServiceCollection services)
     {
@@ -19,10 +20,10 @@ public static class AddEspHomeLib
         MinimalApi.Map(app);
 
         var broadcast = app.Services.GetRequiredService<EventBroadcaster<EcoWittSse, string>>();
-        if (broadcast != null)
-        {
-            await SseHelper.StartPingAsync(broadcast);
-        }
+        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+        //todo add CancellationToken
+        await SseHelper.StartPingAsync(broadcast, lifetime.ApplicationStopping);
 
         return app;
     }
