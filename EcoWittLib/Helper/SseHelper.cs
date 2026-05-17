@@ -6,7 +6,7 @@ namespace EcoWittLib.Helper;
 
 public static class SseHelper
 {
-    public static async Task StartPingAsync(EventBroadcaster<EcoWittSse, string> broadcast, CancellationToken ct)
+    public static async Task StartPingAsync(EventBroadcaster<string, EcoWittSse> broadcast, CancellationToken ct)
     {
         if (broadcast != null)
         {

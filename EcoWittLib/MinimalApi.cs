@@ -14,7 +14,7 @@ public class MinimalApi
     {
         app.MapPost("/weatherforecast", async (HttpContext httpContext,
                                                ILogger<MinimalApi> logger,
-                                               EventBroadcaster<EcoWittSse, string> broadcaster) =>
+                                               EventBroadcaster<string, EcoWittSse> broadcaster) =>
         {
             //todo port in config
             if(httpContext.Connection.LocalPort == 5163)
@@ -46,7 +46,7 @@ public class MinimalApi
 
         app.MapGet("/stream", async (HttpContext httpContext,
                                      ILogger<MinimalApi> logger,
-                                     EventBroadcaster<EcoWittSse, string> broadcaster,
+                                     EventBroadcaster<string, EcoWittSse> broadcaster,
                                      CancellationToken ct) =>
         {
             if (logger.IsEnabled(LogLevel.Information)) logger.LogInformation("Get Stream from {ip}", httpContext.Connection.RemoteIpAddress);

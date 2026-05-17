@@ -21,7 +21,7 @@ public partial class S31 : IDisposable
     private GraphServices GraphServices { get; set; }
 
     [Inject]
-    private EventBroadcaster<IEspHomeUpdate, IChannelSubscriber<string>> ChannelSubscriberUpdate { get; set; }
+    private EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate> ChannelSubscriberUpdate { get; set; }
 
     [Inject] 
     IJSRuntime JS { get; set; }

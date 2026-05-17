@@ -9,8 +9,8 @@ public static class AddEcoWittLib
 {
     public static IServiceCollection AddEcoWitt(this IServiceCollection services)
     {
-        services.AddSingleton<EventBroadcaster<EcoWittSse, string>>();
-        services.AddSingleton<EventBroadcaster<Dictionary<string, string>, IChannelSubscriber<string>>>();
+        services.AddSingleton<EventBroadcaster<string, EcoWittSse>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, Dictionary<string, string>>>();
 
         return services;
     }
@@ -19,7 +19,7 @@ public static class AddEcoWittLib
     {
         MinimalApi.Map(app);
 
-        var broadcast = app.Services.GetRequiredService<EventBroadcaster<EcoWittSse, string>>();
+        var broadcast = app.Services.GetRequiredService<EventBroadcaster<string, EcoWittSse>>();
         var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 
         await SseHelper.StartPingAsync(broadcast, lifetime.ApplicationStopping);

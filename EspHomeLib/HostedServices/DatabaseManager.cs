@@ -33,8 +33,8 @@ public class DatabaseManager : IHostedService, IChannelSubscriber<string>, IDisp
 
     public string ChannelNameId => nameof(DatabaseManager);
 
-    public DatabaseManager(EventBroadcaster<EspEvent, IChannelSubscriber<string>> channelSubscriberEspEvent,
-                           EventBroadcaster<Exception, IChannelSubscriber<string>> channelSubscriberException,
+    public DatabaseManager(EventBroadcaster<IChannelSubscriber<string>, EspEvent> channelSubscriberEspEvent,
+                           EventBroadcaster<IChannelSubscriber<string>, Exception> channelSubscriberException,
                            EspHomeData espHomeData,
                            IServiceScopeFactory serviceScopeFactory,
                            ILogger<DatabaseManager> logger)

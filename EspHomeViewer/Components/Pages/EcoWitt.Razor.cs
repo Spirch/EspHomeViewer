@@ -12,7 +12,7 @@ namespace EspHomeViewer.Components.Pages;
 public partial class EcoWitt : IChannelSubscriber<string>, IDisposable
 {
     [Inject]
-    private EventBroadcaster<Dictionary<string, string>, IChannelSubscriber<string>> ChannelSubscriber { get; set; }
+    private EventBroadcaster<IChannelSubscriber<string>, Dictionary<string, string>> ChannelSubscriber { get; set; }
 
     [Inject]
     IJSRuntime JS { get; set; }

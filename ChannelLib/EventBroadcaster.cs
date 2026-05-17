@@ -4,13 +4,13 @@ using System.Threading.Channels;
 
 namespace ChannelLib;
 
-public sealed class EventBroadcaster<TMessage, TClientId> : IDisposable where TClientId: notnull
+public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TClientId: notnull
 {
     private int _disposed; // 0 = false, 1 = true
 
-    private readonly ILogger _logger;
+    private readonly ILogger<EventBroadcaster<TClientId, TMessage>> _logger;
 
-    public EventBroadcaster(ILogger<EventBroadcaster<TMessage, TClientId>> logger)
+    public EventBroadcaster(ILogger<EventBroadcaster<TClientId, TMessage>> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
 

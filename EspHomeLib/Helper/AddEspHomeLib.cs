@@ -18,9 +18,9 @@ public static class AddEspHomeLib
     {
         services.Configure<EsphomeOptions>(configuration.GetSection("EsphomeOptions"));
 
-        services.AddSingleton<EventBroadcaster<Exception, IChannelSubscriber<string>>>();
-        services.AddSingleton<EventBroadcaster<EspEvent, IChannelSubscriber<string>>>();
-        services.AddSingleton<EventBroadcaster<IEspHomeUpdate, IChannelSubscriber<string>>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, Exception>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, EspEvent>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate>>();
         services.AddSingleton<EspHomeData>();
 
         services.AddHttpClient("sseClient").UseSocketsHttpHandler((handler, _) =>

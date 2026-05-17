@@ -20,7 +20,7 @@ public partial class TotalOutput : IChannelSubscriber<string>, IEspHomeUpdate, I
     public string Unit { get; set; }
 
     [Parameter, EditorRequired]
-    public EventBroadcaster<IEspHomeUpdate, IChannelSubscriber<string>> ChannelSubscriberUpdate { get; set; }
+    public EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate> ChannelSubscriberUpdate { get; set; }
 
     private EventSubscriber<IEspHomeUpdate> channelSubscriber;
     private CancellationTokenSource channelSubscriberCT;

@@ -4,21 +4,22 @@ public static class HelperMethod
 {
     private static readonly (string from, string to, Func<decimal, string> convert)[] dic_from_to = 
         [
-            ("tempinf", "tempinc", (from) => FtoC(from)),
-            ("tempf", "tempc", (from) => FtoC(from)),
-            ("baromrelin", "baromrelhpa", (from) => InHgtohPa(from)),
-            ("baromabsin", "baromabshpa", (from) => InHgtohPa(from)),
-            ("winddir", "winddircardinal", (from) => DegreesToCardinalDetailed(from)),
-            ("windspeedmph", "windspeedkmh", (from) => MphtoKmh(from)),
-            ("windgustmph", "windgustkmh", (from) => MphtoKmh(from)),
-            ("maxdailygust", "maxdailykmh", (from) => MphtoKmh(from)),
-            ("rrain_piezo", "rrain_piezomm", (from) => IntoMm(from)),
-            ("erain_piezo", "erain_piezomm", (from) => IntoMm(from)),
-            ("hrain_piezo", "hrain_piezomm", (from) => IntoMm(from)),
-            ("drain_piezo", "drain_piezomm", (from) => IntoMm(from)),
-            ("wrain_piezo", "wrain_piezomm", (from) => IntoMm(from)),
-            ("mrain_piezo", "mrain_piezomm", (from) => IntoMm(from)),
-            ("yrain_piezo", "yrain_piezomm", (from) => IntoMm(from))
+            ("tempinf", "tempinc", FtoC),
+            ("tempf", "tempc", FtoC),
+            ("baromrelin", "baromrelhpa", InHgtohPa),
+            ("baromabsin", "baromabshpa", InHgtohPa),
+            ("winddir", "winddircardinal", DegreesToCardinalDetailed),
+            ("windspeedmph", "windspeedkmh", MphtoKmh),
+            ("windgustmph", "windgustkmh", MphtoKmh),
+            ("maxdailygust", "maxdailykmh", MphtoKmh),
+            ("rrain_piezo", "rrain_piezomm", IntoMm),
+            ("erain_piezo", "erain_piezomm", IntoMm),
+            ("hrain_piezo", "hrain_piezomm", IntoMm),
+            ("drain_piezo", "drain_piezomm", IntoMm),
+            ("wrain_piezo", "wrain_piezomm", IntoMm),
+            ("mrain_piezo", "mrain_piezomm", IntoMm),
+            ("yrain_piezo", "yrain_piezomm", IntoMm),
+            ("runtime", "runtime_human", SectoHumain),
         ];
 
     private static readonly string[] cardinals = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW", "N"];
@@ -100,5 +101,12 @@ public static class HelperMethod
         degrees *= 10;
         
         return cardinals[(int)Math.Round((degrees % 3600) / 225)];
+    }
+
+    private static string SectoHumain(this decimal second)
+    {
+        var result = TimeSpan.FromSeconds((long)second).ToString(@"d'd 'h'h 'm'm 's's'");
+
+        return result;
     }
 }
