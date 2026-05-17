@@ -11,18 +11,18 @@ using System.Threading.Tasks;
 
 namespace EspHomeLib;
 
-public static class Key
-{
-    public const int Graph1DayValue = 1;
-    public const int Graph3DaysValue = 3;
-    public const int Graph7DaysValue = 7;
-    public const int Graph14DaysValue = 14;
-    public const int Graph30DaysValue = 30;
-    public const int GraphAllValue = 0;
-}
-
 public class GraphServices
 {
+    public static class Key
+    {
+        public const int Graph1DayValue = 1;
+        public const int Graph3DaysValue = 3;
+        public const int Graph7DaysValue = 7;
+        public const int Graph14DaysValue = 14;
+        public const int Graph30DaysValue = 30;
+        public const int GraphAllValue = 0;
+    }
+
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public GraphServices(IServiceScopeFactory serviceScopeFactory)

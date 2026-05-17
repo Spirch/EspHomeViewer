@@ -244,7 +244,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
             {
                 await foreach (var ex in eventSubscriberException.Reader.ReadAllAsync(eventSubscriberCT.Token))
                 {
-                    await HandleErrorAsync(ex);
+                    HandleError(ex);
                 }
             }
             catch (OperationCanceledException)
@@ -316,7 +316,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
         }
     }
 
-    private async Task HandleErrorAsync(Exception e)
+    private void HandleError(Exception e)
     {
         string data = string.Empty;
         if (e.Data?.Count > 0)

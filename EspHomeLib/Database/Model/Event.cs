@@ -3,7 +3,7 @@ using EspHomeLib.Helper;
 
 namespace EspHomeLib.Database.Model;
 
-sealed public class Event : IDbItem
+public sealed class Event : IDbItem
 {
     public Event()
     {

@@ -99,9 +99,39 @@ public sealed class EfContext : DbContext
             //WAL is needed since read and write at the same time can cause lock database exception
             test.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL");
 
-            test.Database.ExecuteSqlRaw("CREATE VIEW MinMaxValue as  \r\nSELECT  row.Name \r\n      , row.FriendlyName \r\n      , data.MaxValue \r\n      , data.MinValue \r\n      , row.Unit \r\nFROM [RowEntry] row \r\nINNER join \r\n( \r\n    SELECT  [RowEntryId] \r\n          , max([Data]) MaxValue\r\n          , min([Data]) MinValue\r\n    FROM [Event] \r\n    GROUP BY RowEntryId \r\n) data ON data.[RowEntryId] = row.[RowEntryId] \r\nORDER BY row.Unit, row.FriendlyName");
+            test.Database.ExecuteSqlRaw("""
+                CREATE VIEW MinMaxValue as  
+                SELECT  row.Name 
+                      , row.FriendlyName 
+                      , data.MaxValue 
+                      , data.MinValue 
+                      , row.Unit 
+                FROM [RowEntry] row 
+                INNER join 
+                ( 
+                    SELECT  [RowEntryId] 
+                          , max([Data]) MaxValue
+                          , min([Data]) MinValue
+                    FROM [Event] 
+                    GROUP BY RowEntryId 
+                ) data ON data.[RowEntryId] = row.[RowEntryId] 
+                ORDER BY row.Unit, row.FriendlyName
+                """);
 
-            test.Database.ExecuteSqlRaw("CREATE VIEW ShowAll as  \r\nSELECT    datetime(data.UnixTime, 'unixepoch', 'localtime') DateTime \r\n         , date(data.UnixTime, 'unixepoch', 'localtime') Date \r\n         , time(data.UnixTime, 'unixepoch', 'localtime') Time \r\n         , data.UnixTime \r\n         , row.Name \r\n         , row.FriendlyName \r\n         , data.Data \r\n         , row.Unit \r\nFROM [RowEntry] row \r\nINNER join [Event] data ON data.[RowEntryId] = row.[RowEntryId] \r\nORDER BY row.FriendlyName, row.Name, data.UnixTime");
+            test.Database.ExecuteSqlRaw("""
+                CREATE VIEW ShowAll as  
+                SELECT    datetime(data.UnixTime, 'unixepoch', 'localtime') DateTime 
+                         , date(data.UnixTime, 'unixepoch', 'localtime') Date 
+                         , time(data.UnixTime, 'unixepoch', 'localtime') Time 
+                         , data.UnixTime 
+                         , row.Name 
+                         , row.FriendlyName 
+                         , data.Data 
+                         , row.Unit 
+                FROM [RowEntry] row 
+                INNER join [Event] data ON data.[RowEntryId] = row.[RowEntryId] 
+                ORDER BY row.FriendlyName, row.Name, data.UnixTime
+                """);
 
             test.Database.CloseConnection();
         }
