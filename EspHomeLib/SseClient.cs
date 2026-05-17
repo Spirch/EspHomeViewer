@@ -20,8 +20,6 @@ public class SseClient : IDisposable
     private readonly EventBroadcaster<IChannelSubscriber, Exception> _channelSubscriberException;
     private readonly ILogger<SseClient> _logger;
 
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-
     private Uri _uri;
 
     private CancellationTokenSource cancellationTokenSource;
@@ -79,8 +77,6 @@ public class SseClient : IDisposable
         {
             if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartMonitoringAsync {uri} Start", nameof(SseClient), _uri);
 
-            _semaphore.Wait(cancellationTokenSource.Token);
-
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
                 if (!await PingAsync(_uri.Host))
@@ -93,6 +89,11 @@ public class SseClient : IDisposable
                 {
                     await MonitoringAsync(_uri);
                 }
+                catch (OperationCanceledException ocex)
+                {
+                    _logger.LogError(ocex, "{Class} StartMonitoringAsync Exception", nameof(SseClient));
+
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "{Class} StartMonitoringAsync Exception", nameof(SseClient));
@@ -103,9 +104,13 @@ public class SseClient : IDisposable
                 }
             }
         }
+        catch (OperationCanceledException ocex)
+        {
+            _logger.LogError(ocex, "{Class} StartMonitoringAsync Exception", nameof(SseClient));
+
+        }
         finally
         {
-            _semaphore.Release();
             if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartMonitoringAsync {uri} End", nameof(SseClient), _uri);
         }
     }
@@ -203,14 +208,6 @@ public class SseClient : IDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
         cancellationTokenSource?.Cancel();
-        try
-        {
-            _semaphore.Wait(); //wait until the cancelled is completed
-
-            _semaphore.Dispose();
-        }
-        catch (ObjectDisposedException) { }
-
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
