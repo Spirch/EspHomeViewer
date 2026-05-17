@@ -79,7 +79,6 @@ public class SseClientManager : IHostedService, IDisposable
 
         if (_sseClients.TryAdd(uri, sseClient))
         {
-            _sseClients[uri] = sseClient;
             sseClient.Start(uri);
         }
         else
