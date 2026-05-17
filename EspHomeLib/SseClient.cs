@@ -206,7 +206,10 @@ public class SseClient : IAsyncDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
         cancellationTokenSource?.Cancel();
-        await runningInstance;
+        if(runningInstance == null)
+        {
+            await runningInstance;
+        }
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;

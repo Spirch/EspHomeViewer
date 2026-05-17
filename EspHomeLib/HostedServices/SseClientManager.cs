@@ -28,50 +28,55 @@ public class SseClientManager : IHostedService, IAsyncDisposable
         _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
     }
 
-    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
+    private async void OnEspHomeOptionChanged(object? sender, EventArgs e)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged Start", nameof(SseClientManager));
 
-        var newUris = _espHomeData.EsphomeOptions.Uri;
-        var currentUris = _sseClients.Keys;
-
-        foreach (var uri in newUris.Except(currentUris))
+        try
         {
-            AddClient(uri);
+            var newUris = _espHomeData.EsphomeOptions.Uri;
+            var currentUris = _sseClients.Keys;
+
+            foreach (var uri in newUris.Except(currentUris))
+            {
+                await AddClientAsync(uri);
+            }
+
+            foreach (var uri in currentUris.Except(newUris))
+            {
+                await RemoveClientAsync(uri);
+            }
         }
-
-        foreach (var uri in currentUris.Except(newUris))
+        catch (Exception ex)
         {
-            RemoveClient(uri);
+            _logger.LogError(ex, "{Class} OnEspHomeOptionChanged Exception", nameof(SseClientManager));
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClientManager));
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
 
-        InitializeClients(_espHomeData.EsphomeOptions.Uri);
+        await InitializeClientsAsync(_espHomeData.EsphomeOptions.Uri);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(SseClientManager));
-
-        return Task.CompletedTask;
     }
 
-    private void InitializeClients(IEnumerable<Uri> uris)
+    private async Task InitializeClientsAsync(IEnumerable<Uri> uris)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitializeClients Start", nameof(SseClientManager));
 
         foreach (var uri in uris)
         {
-            AddClient(uri);
+           await AddClientAsync(uri);
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitializeClients End", nameof(SseClientManager));
     }
 
-    private void AddClient(Uri uri)
+    private async Task AddClientAsync(Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} Start", nameof(SseClientManager), uri);
 
@@ -80,6 +85,10 @@ public class SseClientManager : IHostedService, IAsyncDisposable
         if (_sseClients.TryAdd(uri, sseClient))
         {
             sseClient.Start(uri);
+        }
+        else
+        {
+            await sseClient.DisposeAsync();
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);
@@ -94,25 +103,16 @@ public class SseClientManager : IHostedService, IAsyncDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(SseClientManager));
     }
 
-    private void RemoveClient(Uri uri)
+    private async Task RemoveClientAsync(Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} RemoveClient {uri} Start", nameof(SseClientManager), uri);
 
         if (_sseClients.TryRemove(uri, out var client))
         {
-            _ = DisposeClient(client);
+            await client.DisposeAsync();
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} RemoveClient {uri} End", nameof(SseClientManager), uri);
-    }
-
-    private async Task DisposeClient(SseClient client)
-    {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} Start", nameof(SseClientManager), client);
-
-        await client.DisposeAsync();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} End", nameof(SseClientManager), client);
     }
 
     public async ValueTask DisposeAsync()
@@ -123,7 +123,7 @@ public class SseClientManager : IHostedService, IAsyncDisposable
 
         foreach (var client in _sseClients.Values)
         {
-            await DisposeClient(client);
+            await client.DisposeAsync();
         }
 
         _sseClients.Clear();
