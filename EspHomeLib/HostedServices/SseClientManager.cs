@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib.HostedServices;
-public class SseClientManager : IHostedService, IDisposable
+public class SseClientManager : IHostedService, IAsyncDisposable
 {
     private readonly EspHomeData _espHomeData;
 
@@ -81,23 +81,17 @@ public class SseClientManager : IHostedService, IDisposable
         {
             sseClient.Start(uri);
         }
-        else
-        {
-            sseClient.Dispose(); // don't need the new one
-        }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync Start", nameof(SseClientManager));
 
-        Dispose();
+        await DisposeAsync();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StopAsync End", nameof(SseClientManager));
-
-        return Task.CompletedTask;
     }
 
     private void RemoveClient(Uri uri)
@@ -106,22 +100,22 @@ public class SseClientManager : IHostedService, IDisposable
 
         if (_sseClients.TryRemove(uri, out var client))
         {
-            DisposeClient(client);
+            _ = DisposeClient(client);
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} RemoveClient {uri} End", nameof(SseClientManager), uri);
     }
 
-    private void DisposeClient(SseClient client)
+    private async Task DisposeClient(SseClient client)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} Start", nameof(SseClientManager), client);
 
-        client.Dispose();
+        await client.DisposeAsync();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} DisposeClient {client} End", nameof(SseClientManager), client);
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(SseClientManager));
 
@@ -129,7 +123,7 @@ public class SseClientManager : IHostedService, IDisposable
 
         foreach (var client in _sseClients.Values)
         {
-            DisposeClient(client);
+            await DisposeClient(client);
         }
 
         _sseClients.Clear();

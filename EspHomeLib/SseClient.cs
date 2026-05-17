@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib;
-public class SseClient : IDisposable
+public class SseClient : IAsyncDisposable
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EspHomeData _espHomeData;
@@ -89,10 +89,9 @@ public class SseClient : IDisposable
                 {
                     await MonitoringAsync(_uri);
                 }
-                catch (OperationCanceledException ocex)
+                catch (OperationCanceledException)
                 {
-                    _logger.LogError(ocex, "{Class} StartMonitoringAsync Exception", nameof(SseClient));
-
+                    //do nothing
                 }
                 catch (Exception ex)
                 {
@@ -104,10 +103,9 @@ public class SseClient : IDisposable
                 }
             }
         }
-        catch (OperationCanceledException ocex)
+        catch (OperationCanceledException)
         {
-            _logger.LogError(ocex, "{Class} StartMonitoringAsync Exception", nameof(SseClient));
-
+            //do nothing
         }
         finally
         {
@@ -203,11 +201,12 @@ public class SseClient : IDisposable
         return $"{nameof(SseClient)} {_uri}";
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
         cancellationTokenSource?.Cancel();
+        await runningInstance;
         cancellationTokenSource?.Dispose();
         cancellationTokenSource = null;
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
