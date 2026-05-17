@@ -1,6 +1,5 @@
 ﻿using ChannelLib;
 using EspHomeLib.Helper;
-using EspHomeLib.Interface;
 using EspHomeLib.Option;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,8 +20,8 @@ public class EspHomeData : IDisposable
     private readonly ILogger<EspHomeData> _logger;
     private readonly SemaphoreSlim handleOnOptionChanged = new(1, 1);
     private readonly CancellationTokenSource cancellationTokenSource = new();
-    private readonly EventBroadcaster<IChannelSubscriber<string>, EspEvent> _channelSubscriberEspEvent;
-    private readonly EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate> _channelSubscriberUpdate;
+    private readonly EventBroadcaster<IChannelSubscriber, EspEvent> _channelSubscriberEspEvent;
+    private readonly EventBroadcaster<IChannelSubscriber, IChannelSubscriber> _channelSubscriberUpdate;
     private int _disposed; // 0 = false, 1 = true
 
     private record EspHomeSnapshot(FrozenDictionary<string, ProcessOption> MergeInfo,
@@ -32,8 +31,8 @@ public class EspHomeData : IDisposable
     private volatile EspHomeSnapshot _snapshot;
 
     public EspHomeData(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
-                       EventBroadcaster<IChannelSubscriber<string>, EspEvent> channelSubscriber,
-                       EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate> channelSubscriberUpdate,
+                       EventBroadcaster<IChannelSubscriber, EspEvent> channelSubscriber,
+                       EventBroadcaster<IChannelSubscriber, IChannelSubscriber> channelSubscriberUpdate,
                        ILogger<EspHomeData> logger)
     {
         _logger = logger;

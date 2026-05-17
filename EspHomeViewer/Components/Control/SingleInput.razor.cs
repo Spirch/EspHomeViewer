@@ -1,6 +1,5 @@
 ﻿using ChannelLib;
 using EspHomeLib.Dto;
-using EspHomeLib.Interface;
 using Microsoft.AspNetCore.Components;
 using System;
 using System.Threading;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Control;
 
-public partial class SingleInput : IChannelSubscriber<string>, IEspHomeUpdate, IDisposable
+public partial class SingleInput : IChannelSubscriber, IDisposable
 {
     [Inject]
     private EspHomeData EspHomeData { get; set; }
@@ -23,9 +22,9 @@ public partial class SingleInput : IChannelSubscriber<string>, IEspHomeUpdate, I
     public string Unit { get; set; }
 
     [Parameter, EditorRequired]
-    public EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate> ChannelSubscriberUpdate { get; set; }
+    public EventBroadcaster<IChannelSubscriber, IChannelSubscriber> ChannelSubscriberUpdate { get; set; }
 
-    private EventSubscriber<IEspHomeUpdate> channelSubscriber;
+    private EventSubscriber<IChannelSubscriber> channelSubscriber;
     private CancellationTokenSource channelSubscriberCT;
 
     private decimal? Data { get; set; }

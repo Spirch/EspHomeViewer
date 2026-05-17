@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Pages;
 
-public partial class EcoWitt : IChannelSubscriber<string>, IDisposable
+public partial class EcoWitt : IChannelSubscriber, IDisposable
 {
     [Inject]
-    private EventBroadcaster<IChannelSubscriber<string>, Dictionary<string, string>> ChannelSubscriber { get; set; }
+    private EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> ChannelSubscriber { get; set; }
 
     [Inject]
     IJSRuntime JS { get; set; }

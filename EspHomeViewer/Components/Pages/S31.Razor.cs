@@ -2,7 +2,6 @@
 using ChannelLib;
 using EspHomeLib;
 using EspHomeLib.Dto;
-using EspHomeLib.Interface;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -21,7 +20,7 @@ public partial class S31 : IDisposable
     private GraphServices GraphServices { get; set; }
 
     [Inject]
-    private EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate> ChannelSubscriberUpdate { get; set; }
+    private EventBroadcaster<IChannelSubscriber, IChannelSubscriber> ChannelSubscriberUpdate { get; set; }
 
     [Inject] 
     IJSRuntime JS { get; set; }

@@ -63,13 +63,13 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
     {
         CheckIfDisposed();
 
-        foreach (var sub in _clients.Keys.Where(x => x is IChannelSubscriber<string> y && y.ChannelNameId == channelNameId))
+        foreach (var (key, channel) in _clients)
         {
-            if (_clients.TryGetValue(sub, out var channel))
+            if(key is IChannelSubscriber sub && sub.ChannelNameId == channelNameId)
             {
                 if (!channel.Writer.TryWrite(message))
                 {
-                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), channelNameId);
+                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("Broadcast for {T} and {key} failed", typeof(TMessage), key);
                 }
             }
         }

@@ -10,7 +10,7 @@ public static class AddEcoWittLib
     public static IServiceCollection AddEcoWitt(this IServiceCollection services)
     {
         services.AddSingleton<EventBroadcaster<string, EcoWittSse>>();
-        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, Dictionary<string, string>>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber, Dictionary<string, string>>>();
 
         return services;
     }

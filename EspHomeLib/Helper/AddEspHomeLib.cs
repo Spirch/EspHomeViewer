@@ -2,7 +2,6 @@
 using EspHomeLib.Database;
 using EspHomeLib.Dto;
 using EspHomeLib.HostedServices;
-using EspHomeLib.Interface;
 using EspHomeLib.Option;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,9 +17,9 @@ public static class AddEspHomeLib
     {
         services.Configure<EsphomeOptions>(configuration.GetSection("EsphomeOptions"));
 
-        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, Exception>>();
-        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, EspEvent>>();
-        services.AddSingleton<EventBroadcaster<IChannelSubscriber<string>, IEspHomeUpdate>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber, Exception>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber, EspEvent>>();
+        services.AddSingleton<EventBroadcaster<IChannelSubscriber, IChannelSubscriber>>();
         services.AddSingleton<EspHomeData>();
 
         services.AddHttpClient("sseClient").UseSocketsHttpHandler((handler, _) =>

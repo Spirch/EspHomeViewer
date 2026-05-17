@@ -16,8 +16,8 @@ public class SseClient : IDisposable
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EspHomeData _espHomeData;
-    private readonly EventBroadcaster<IChannelSubscriber<string>, Dictionary<string, string>> _channelSubscriberEcoWitt;
-    private readonly EventBroadcaster<IChannelSubscriber<string>, Exception> _channelSubscriberException;
+    private readonly EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> _channelSubscriberEcoWitt;
+    private readonly EventBroadcaster<IChannelSubscriber, Exception> _channelSubscriberException;
     private readonly ILogger<SseClient> _logger;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -35,8 +35,8 @@ public class SseClient : IDisposable
 
     public SseClient(IHttpClientFactory httpClientFactory,
                      EspHomeData espHomeData,
-                     EventBroadcaster<IChannelSubscriber<string>, Dictionary<string, string>> channelSubscriberEcoWitt,
-                     EventBroadcaster<IChannelSubscriber<string>, Exception> channelSubscriberException,
+                     EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> channelSubscriberEcoWitt,
+                     EventBroadcaster<IChannelSubscriber, Exception> channelSubscriberException,
                      ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
