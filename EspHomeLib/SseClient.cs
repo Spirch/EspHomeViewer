@@ -206,7 +206,7 @@ public class SseClient : IAsyncDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
         cancellationTokenSource?.Cancel();
-        if(runningInstance == null)
+        if(runningInstance != null)
         {
             await runningInstance;
         }
