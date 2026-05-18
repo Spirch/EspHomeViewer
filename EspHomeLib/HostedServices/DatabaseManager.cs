@@ -178,13 +178,13 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
     {
         _ = Task.Run(async () =>
         {
+            var swCleanup = Stopwatch.StartNew();
+            using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
+
             while (!eventSubscriberCT.IsCancellationRequested)
             {
                 try
                 {
-                    var swCleanup = Stopwatch.StartNew();
-                    using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
-
                     while (await timer.WaitForNextTickAsync(eventSubscriberCT.Token))
                     {
                         if (record.IsEmpty)
