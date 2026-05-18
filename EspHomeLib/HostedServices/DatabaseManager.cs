@@ -178,7 +178,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
     {
         _ = Task.Run(async () =>
         {
-            while(!eventSubscriberCT.IsCancellationRequested)
+            while (!eventSubscriberCT.IsCancellationRequested)
             {
                 try
                 {
@@ -212,7 +212,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
                 catch (OperationCanceledException)
                 {
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "DealWithDb");
                     await Task.Delay(10000);
@@ -225,30 +225,44 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
     {
         _ = Task.Run(async () =>
         {
-            try
+            while (!eventSubscriberCT.Token.IsCancellationRequested)
             {
-                await foreach (var espEvent in eventSubscriberEspEvent.Reader.ReadAllAsync(eventSubscriberCT.Token))
+                try
                 {
-                    HandleSingleEvent(espEvent);
-                    HandleGroupEvent(espEvent);
+                    await foreach (var espEvent in eventSubscriberEspEvent.Reader.ReadAllAsync(eventSubscriberCT.Token))
+                    {
+                        HandleSingleEvent(espEvent);
+                        HandleGroupEvent(espEvent);
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "{Class} SubscriberReader eventSubscriberEspEvent crashed", nameof(DatabaseManager));
+                }
             }
         }, eventSubscriberCT.Token);
 
         _ = Task.Run(async () =>
         {
-            try
+            while (!eventSubscriberCT.Token.IsCancellationRequested)
             {
-                await foreach (var ex in eventSubscriberException.Reader.ReadAllAsync(eventSubscriberCT.Token))
+                try
                 {
-                    HandleError(ex);
+                    await foreach (var ex in eventSubscriberException.Reader.ReadAllAsync(eventSubscriberCT.Token))
+                    {
+                        HandleError(ex);
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "{Class} SubscriberReader eventSubscriberEspEvent crashed", nameof(DatabaseManager));
+                }
             }
         }, eventSubscriberCT.Token);
     }
