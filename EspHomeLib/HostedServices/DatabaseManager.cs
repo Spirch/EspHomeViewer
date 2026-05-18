@@ -23,8 +23,11 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
     private readonly ILogger<DatabaseManager> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    private readonly EventSubscriber<EspEvent> eventSubscriberEspEvent;
-    private readonly EventSubscriber<Exception> eventSubscriberException;
+    private readonly EventBroadcaster<IChannelSubscriber, EspEvent> _channelSubscriberEspEvent;
+    private EventSubscriber<EspEvent> eventSubscriberEspEvent;
+
+    private readonly EventBroadcaster<IChannelSubscriber, Exception> _channelSubscriberException;
+    private EventSubscriber<Exception> eventSubscriberException;
     private readonly CancellationTokenSource eventSubscriberCT = new();
 
     private readonly ConcurrentDictionary<string, RecordData> recordData = new();
@@ -43,13 +46,8 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
         _logger = logger;
         _espHomeData = espHomeData;
 
-        InitOption();
-
-        eventSubscriberEspEvent = channelSubscriberEspEvent.Subscribe(this);
-        eventSubscriberException = channelSubscriberException.Subscribe(this);
-        SubscriberReader();
-
-        _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
+        _channelSubscriberEspEvent = channelSubscriberEspEvent;
+        _channelSubscriberException = channelSubscriberException;
     }
 
     private void OnEspHomeOptionChanged(object? sender, EventArgs e)
@@ -155,6 +153,14 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
     public Task StartAsync(CancellationToken cancellationToken)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(DatabaseManager));
+
+        InitOption();
+
+        eventSubscriberEspEvent = _channelSubscriberEspEvent.Subscribe(this);
+        eventSubscriberException = _channelSubscriberException.Subscribe(this);
+        SubscriberReader();
+
+        _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
 
         DealWithDb();
 
