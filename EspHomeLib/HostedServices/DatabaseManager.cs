@@ -261,7 +261,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "{Class} SubscriberReader eventSubscriberEspEvent crashed", nameof(DatabaseManager));
+                    _logger.LogError(ex, "{Class} SubscriberReader eventSubscriberException crashed", nameof(DatabaseManager));
                 }
             }
         }, eventSubscriberCT.Token);

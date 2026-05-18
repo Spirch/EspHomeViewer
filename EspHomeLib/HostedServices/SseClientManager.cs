@@ -80,13 +80,15 @@ public class SseClientManager : IHostedService, IAsyncDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} Start", nameof(SseClientManager), uri);
 
+        bool success = false;
         var sseClient = _serviceProvider.GetRequiredService<SseClient>();
 
         if (_sseClients.TryAdd(uri, sseClient))
         {
-            sseClient.Start(uri);
+            success = sseClient.Start(uri);
         }
-        else
+
+        if(!success)
         {
             await sseClient.DisposeAsync();
         }

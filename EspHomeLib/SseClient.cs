@@ -56,19 +56,24 @@ public class SseClient : IAsyncDisposable
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnOptionChanged End", nameof(SseClient));
     }
 
-    public void Start(Uri uri)
+    public bool Start(Uri uri)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Start {uri} Start", nameof(SseClient), uri);
+        bool success = false;
 
-        if (cancellationTokenSource == null)
+        var cts = new CancellationTokenSource();
+        if (Interlocked.CompareExchange(ref cancellationTokenSource, cts, null) == null)
         {
             cancellationTokenSource = new CancellationTokenSource();
             _uri = uri;
 
             runningInstance = StartMonitoringAsync();
+            success = true;
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Start {uri} End", nameof(SseClient), uri);
+
+        return success;
     }
 
     private async Task StartMonitoringAsync()
