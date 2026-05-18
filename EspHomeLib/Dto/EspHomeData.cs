@@ -127,8 +127,9 @@ public class EspHomeData : IDisposable
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetSumValue {groupInfo}", nameof(EspHomeData), groupInfo);
 
         var sumValue = DataDisplay.Values
-                       .Where(x => string.Equals(x.GroupInfo, groupInfo, StringComparison.OrdinalIgnoreCase))
-                       .Sum(x => x.Data);
+                       .Where(x => x.Data.HasValue &&
+                                   string.Equals(x.GroupInfo, groupInfo, StringComparison.OrdinalIgnoreCase))
+                       .Sum(x => x.Data) ?? 0f;
 
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetSumValue {sumValue}", nameof(EspHomeData), sumValue);
 

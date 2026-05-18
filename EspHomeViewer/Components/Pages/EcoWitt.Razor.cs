@@ -39,22 +39,29 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
 
         _ = Task.Run(async () =>
         {
-            try
+            while (!weatherDataCT.Token.IsCancellationRequested)
             {
-                await foreach (var message in eventSubscriber.Reader.ReadAllAsync(weatherDataCT.Token))
+                try
                 {
-                    foreach (var d in message)
+                    await foreach (var message in eventSubscriber.Reader.ReadAllAsync(weatherDataCT.Token))
                     {
-                        weatherData[d.Key] = d.Value;
-                    }
+                        foreach (var d in message)
+                        {
+                            weatherData[d.Key] = d.Value;
+                        }
 
-                    await InvokeAsync(StateHasChanged);
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    //do nothing
                 }
             }
-            catch (OperationCanceledException)
-            {
-            }
-        });
+        }, weatherDataCT.Token);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

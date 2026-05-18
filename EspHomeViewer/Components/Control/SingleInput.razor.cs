@@ -54,17 +54,24 @@ public partial class SingleInput : IChannelSubscriber, IDisposable
 
         _ = Task.Run(async () =>
         {
-            try
+            while(!channelSubscriberCT.Token.IsCancellationRequested)
             {
-                await foreach (var message in channelSubscriber.Reader.ReadAllAsync(channelSubscriberCT.Token))
+                try
                 {
-                    await UpdateData();
+                    await foreach (var message in channelSubscriber.Reader.ReadAllAsync(channelSubscriberCT.Token))
+                    {
+                        await UpdateData();
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    //double nothing
                 }
             }
-            catch (OperationCanceledException)
-            {
-            }
-        });
+        }, channelSubscriberCT.Token);
     }
 
     private async Task UpdateData()
