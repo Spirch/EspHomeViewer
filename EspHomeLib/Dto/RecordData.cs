@@ -6,8 +6,8 @@ public class RecordData
 {
     public RowEntry RowEntry { get; set; }
 
-    public decimal RecordDelta { get; set; }
-    public decimal LastValue { get; set; }
+    public float RecordDelta { get; set; }
+    public float LastValue { get; set; }
 
     public int RecordThrottle { get; set; }
     public Stopwatch LastRecordSw { get; set; }

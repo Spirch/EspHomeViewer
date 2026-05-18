@@ -5,7 +5,7 @@ public class StatusInfoOption
     public string Suffix { get; set; }
     public string Name { get; set; }
     public string Unit { get; set; }
-    public decimal RecordDelta { get; set; }
+    public float RecordDelta { get; set; }
     public int RecordThrottle { get; set; }
     public bool Hidden { get; set; }
     public string GroupInfoName { get; set; }

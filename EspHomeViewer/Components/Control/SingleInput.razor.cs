@@ -27,10 +27,12 @@ public partial class SingleInput : IChannelSubscriber, IDisposable
     private EventSubscriber<IChannelSubscriber> channelSubscriber;
     private CancellationTokenSource channelSubscriberCT;
 
-    private decimal? Data { get; set; }
+    private float? Data { get; set; }
     private DateTime? LastUpdate { get; set; }
 
     public string ChannelNameId => $"{DeviceName}.{Name}";
+
+    private string DataTruncated => Data?.ToString("F2").Replace(".00", string.Empty);
 
     protected override void OnParametersSet()
     {

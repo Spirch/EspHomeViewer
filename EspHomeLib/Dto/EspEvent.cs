@@ -9,7 +9,7 @@ public class EspEvent
 {
     public override string ToString()
     {
-        return $"Id: {Id}, Value: {Value}, Name: {Name}, State: {State}, Event_Type: {Event_Type}, DecimalValue: {Value.ConvertToDecimal()}, UnixTimeMs: {UnixTime}";
+        return $"Id: {Id}, Value: {Value}, Name: {Name}, State: {State}, Event_Type: {Event_Type}, FloatValue: {Value.ConvertToFloat():0.##}, UnixTimeMs: {UnixTime}";
     }
 
     //sse event fields

@@ -277,7 +277,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
 
             if (espEvent.Event_Type == null)
             {
-                if (Math.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+                if (MathF.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
                 {
                     if (data.LastValue != newEvent.Data)
                     {
@@ -307,7 +307,7 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
             var newEvent = new Event()
             {
                 SourceId = processOption.GroupInfo.Id,
-                Data = _espHomeData.TryGetSumValue(processOption.GroupInfo.Name) ?? 0m,
+                Data = _espHomeData.TryGetSumValue(processOption.GroupInfo.Name) ?? 0f,
                 UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 IsGroup = true,
             };

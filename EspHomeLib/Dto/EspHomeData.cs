@@ -122,7 +122,7 @@ public class EspHomeData : IDisposable
         return friendlyDisplay;
     }
 
-    public decimal? TryGetSumValue(string groupInfo)
+    public float? TryGetSumValue(string groupInfo)
     {
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} TryGetSumValue {groupInfo}", nameof(EspHomeData), groupInfo);
 
@@ -144,7 +144,7 @@ public class EspHomeData : IDisposable
         if (snapshot.MergeInfo.TryGetValue(espEvent.Id, out var processOption) &&
             snapshot.DataDisplay.TryGetValue((processOption.DeviceInfo.DeviceName, processOption.StatusInfo.Name), out var friendlyDisplay))
         {
-            friendlyDisplay.Data = espEvent.Value.ConvertToDecimal();
+            friendlyDisplay.Data = espEvent.Value.ConvertToFloat();
             friendlyDisplay.LastUpdate = DateTimeOffset.FromUnixTimeSeconds(espEvent.UnixTime).LocalDateTime;
 
             _channelSubscriberUpdate.BroadcastByName($"{friendlyDisplay.DeviceName}.{friendlyDisplay.Name}", null);

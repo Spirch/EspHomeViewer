@@ -4,38 +4,22 @@ using System.Globalization;
 namespace EspHomeLib.Helper;
 public static class EspEventHelper
 {
-    public static decimal ConvertToDecimal(this object value)
+    public static float ConvertToFloat(this object value)
     {
-        if (value is decimal valDec)
+        if (value is float valDec)
             return valDec;
 
         if (value is null)
-            return 0m;
+            return 0f;
 
         var valueString = value.ToString();
 
-        if (decimal.TryParse(valueString, NumberStyles.Number | NumberStyles.AllowExponent, null, out decimal dec))
-            return dec.TruncateDecimal(2);
+        if (float.TryParse(valueString, NumberStyles.Number | NumberStyles.AllowExponent, null, out var dec))
+            return dec;
 
         if (bool.TryParse(valueString, out bool bo))
-            return Convert.ToDecimal(bo);
+            return Convert.ToSingle(bo);
 
-        return 0m;
-    }
-
-    private static decimal TruncateDecimal(this decimal d, byte decimals)
-    {
-        decimal r = Math.Round(d, decimals);
-
-        if (d > 0 && r > d)
-        {
-            return r - new decimal(1, 0, 0, false, decimals);
-        }
-        else if (d < 0 && r < d)
-        {
-            return r + new decimal(1, 0, 0, false, decimals);
-        }
-
-        return r;
+        return 0f;
     }
 }

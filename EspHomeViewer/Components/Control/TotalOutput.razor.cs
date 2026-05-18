@@ -24,10 +24,11 @@ public partial class TotalOutput : IChannelSubscriber,  IDisposable
     private EventSubscriber<IChannelSubscriber> channelSubscriber;
     private CancellationTokenSource channelSubscriberCT;
 
-    private decimal? Data { get; set; }
+    private float? Data { get; set; }
     private DateTime? LastUpdate { get; set; }
 
-    public string ChannelNameId => GroupInfo;
+    public string ChannelNameId => GroupInfo; 
+    private string DataTruncated => Data?.ToString("F2").Replace(".00", string.Empty);
 
     protected override void OnParametersSet()
     {
