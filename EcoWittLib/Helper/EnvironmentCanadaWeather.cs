@@ -6,85 +6,85 @@
 public static class EnvironmentCanadaWeather
 {
     // Magnus formula constants (Alduchov & Eskridge, 1996)
-    private const decimal MagnusA = 17.625m;
-    private const decimal MagnusB = 243.04m;
+    private const float MagnusA = 17.625f;
+    private const float MagnusB = 243.04f;
 
     // Dew point valid range
-    private const decimal DewPointMinTempC = -40m;
-    private const decimal DewPointMaxTempC = 60m;
+    private const float DewPointMinTempC = -40f;
+    private const float DewPointMaxTempC = 60f;
 
     // Humidex constants
-    private const decimal HumidexMinTempC = 20m;
-    private const decimal HumidexVapourBase = 6.11m;
-    private const decimal HumidexVapourCoefficient = 5417.7530m;
-    private const decimal HumidexKelvinOffset1 = 273.16m;
-    private const decimal HumidexKelvinOffset2 = 273.15m;
-    private const decimal HumidexScale = 0.5555m;
-    private const decimal HumidexVapourThreshold = 10.0m;
+    private const float HumidexMinTempC = 20f;
+    private const float HumidexVapourBase = 6.11f;
+    private const float HumidexVapourCoefficient = 5417.7530f;
+    private const float HumidexKelvinOffset1 = 273.16f;
+    private const float HumidexKelvinOffset2 = 273.15f;
+    private const float HumidexScale = 0.5555f;
+    private const float HumidexVapourThreshold = 10.0f;
 
     // Wind chill constants (Environment Canada / NWS, 2001)
-    private const decimal WindChillIntercept = 13.12m;
-    private const decimal WindChillTempCoefficient = 0.6215m;
-    private const decimal WindChillWindCoefficient1 = 11.37m;
-    private const decimal WindChillWindCoefficient2 = 0.3965m;
-    private const decimal WindChillWindExponent = 0.16m;
-    private const decimal WindChillMinWindSpeedKmh = 4.8m;
-    private const decimal WindChillMaxWindSpeedKmh = 200m;
-    private const decimal WindChillMaxTempC = 0m;
+    private const float WindChillIntercept = 13.12f;
+    private const float WindChillTempCoefficient = 0.6215f;
+    private const float WindChillWindCoefficient1 = 11.37f;
+    private const float WindChillWindCoefficient2 = 0.3965f;
+    private const float WindChillWindExponent = 0.16f;
+    private const float WindChillMinWindSpeedKmh = 4.8f;
+    private const float WindChillMaxWindSpeedKmh = 200f;
+    private const float WindChillMaxTempC = 0f;
 
     // Shared
-    private const decimal HumidityMin = 0m;
-    private const decimal HumidityMax = 100m;
-    private const decimal HumidityDivisor = 100.0m;
+    private const float HumidityMin = 0f;
+    private const float HumidityMax = 100f;
+    private const float HumidityDivisor = 100.0f;
 
     // Formatting
     private const string TemperatureFormat = "F1";
 
     // -------------------------------------------------------------------------
 
-    private static decimal CalculateAlpha(decimal temperatureC, decimal relativeHumidity) =>
+    private static float CalculateAlpha(float temperatureC, float relativeHumidity) =>
         (MagnusA * temperatureC / (MagnusB + temperatureC))
-        + (decimal)Math.Log((double)(relativeHumidity / HumidityDivisor));
+        + MathF.Log((relativeHumidity / HumidityDivisor));
 
-    public static string CalculateDewPoint(decimal temperatureC, decimal relativeHumidity)
+    public static string CalculateDewPoint(float temperatureC, float relativeHumidity)
     {
         if (relativeHumidity <= HumidityMin || relativeHumidity > HumidityMax) return temperatureC.ToString(TemperatureFormat);
         if (temperatureC < DewPointMinTempC || temperatureC > DewPointMaxTempC) return temperatureC.ToString(TemperatureFormat);
 
-        decimal alpha = CalculateAlpha(temperatureC, relativeHumidity);
-        decimal dewPoint = (MagnusB * alpha) / (MagnusA - alpha);
+        float alpha = CalculateAlpha(temperatureC, relativeHumidity);
+        float dewPoint = (MagnusB * alpha) / (MagnusA - alpha);
 
-        return Math.Round(dewPoint, 1).ToString(TemperatureFormat);
+        return MathF.Round(dewPoint, 1).ToString(TemperatureFormat);
     }
 
-    public static string CalculateHumidex(decimal temperatureC, decimal relativeHumidity)
+    public static string CalculateHumidex(float temperatureC, float relativeHumidity)
     {
         if (temperatureC < HumidexMinTempC) return temperatureC.ToString(TemperatureFormat);
         if (relativeHumidity <= HumidityMin || relativeHumidity > HumidityMax) return temperatureC.ToString(TemperatureFormat);
 
-        decimal dewPointC = decimal.Parse(CalculateDewPoint(temperatureC, relativeHumidity));
-        decimal e = HumidexVapourBase
-                          * (decimal)Math.Exp((double)(HumidexVapourCoefficient
-                          * (1.0m / HumidexKelvinOffset1 - 1.0m / (HumidexKelvinOffset2 + dewPointC))));
-        decimal humidex = temperatureC + HumidexScale * (e - HumidexVapourThreshold);
+        float dewPointC = float.Parse(CalculateDewPoint(temperatureC, relativeHumidity));
+        float e = HumidexVapourBase
+                          * MathF.Exp((HumidexVapourCoefficient
+                          * (1.0f / HumidexKelvinOffset1 - 1.0f / (HumidexKelvinOffset2 + dewPointC))));
+        float humidex = temperatureC + HumidexScale * (e - HumidexVapourThreshold);
 
         if (humidex <= temperatureC) return temperatureC.ToString(TemperatureFormat);
 
-        return Math.Round(humidex, 1).ToString(TemperatureFormat);
+        return MathF.Round(humidex, 1).ToString(TemperatureFormat);
     }
 
-    public static string CalculateWindChill(decimal temperatureC, decimal windSpeedKmh)
+    public static string CalculateWindChill(float temperatureC, float windSpeedKmh)
     {
         if (temperatureC > WindChillMaxTempC) return temperatureC.ToString(TemperatureFormat);
         if (windSpeedKmh <= WindChillMinWindSpeedKmh) return temperatureC.ToString(TemperatureFormat);
         if (windSpeedKmh > WindChillMaxWindSpeedKmh) return temperatureC.ToString(TemperatureFormat);
 
-        decimal windPow = (decimal)Math.Pow((double)windSpeedKmh, (double)WindChillWindExponent);
-        decimal windChill = WindChillIntercept
+        float windPow = MathF.Pow(windSpeedKmh, WindChillWindExponent);
+        float windChill = WindChillIntercept
                           + (WindChillTempCoefficient * temperatureC)
                           - (WindChillWindCoefficient1 * windPow)
                           + (WindChillWindCoefficient2 * temperatureC * windPow);
 
-        return Math.Round(windChill, 1).ToString(TemperatureFormat);
+        return MathF.Round(windChill, 1).ToString(TemperatureFormat);
     }
 }

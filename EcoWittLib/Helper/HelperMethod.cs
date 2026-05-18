@@ -2,7 +2,7 @@
 
 public static class HelperMethod
 {
-    private static readonly (string from, string to, Func<decimal, string> convert)[] dic_from_to = 
+    private static readonly (string from, string to, Func<float, string> convert)[] dic_from_to = 
         [
             ("tempinf", "tempinc", FtoC),
             ("tempf", "tempc", FtoC),
@@ -37,7 +37,7 @@ public static class HelperMethod
 
         foreach (var val in dic_from_to)
         {
-            if (dict.TryGetValue(val.from, out string? dicValString) && decimal.TryParse(dicValString, out decimal dicValDec))
+            if (dict.TryGetValue(val.from, out string? dicValString) && float.TryParse(dicValString, out var dicValDec))
             {
                 dict[val.to] = val.convert(dicValDec);
                 dict.Remove(val.from);
@@ -53,57 +53,57 @@ public static class HelperMethod
         dict["humidex"] = string.Empty;
         dict["windChill"] = string.Empty;
 
-        if (dict.TryGetValue("tempc", out var tempc) && decimal.TryParse(tempc, out var dectempc))
+        if (dict.TryGetValue("tempc", out var tempc) && float.TryParse(tempc, out var dectempc))
         {
-            if (dict.TryGetValue("humidity", out var humidity) && decimal.TryParse(humidity, out var dechumidity))
+            if (dict.TryGetValue("humidity", out var humidity) && float.TryParse(humidity, out var dechumidity))
             {
                 dict["dewPoint"] = EnvironmentCanadaWeather.CalculateDewPoint(dectempc, dechumidity);
                 dict["humidex"] = EnvironmentCanadaWeather.CalculateHumidex(dectempc, dechumidity);
             }
 
-            if (dict.TryGetValue("windspeedkmh", out var windspeedkmh) && decimal.TryParse(windspeedkmh, out var decwindspeedkmh))
+            if (dict.TryGetValue("windspeedkmh", out var windspeedkmh) && float.TryParse(windspeedkmh, out var decwindspeedkmh))
             {
                 dict["windChill"] = EnvironmentCanadaWeather.CalculateWindChill(dectempc, decwindspeedkmh);
             }
         }
     }
 
-    public static string FtoC(this decimal fahrenheit)
+    public static string FtoC(this float fahrenheit)
     {
-        var celcius =  5.0m / 9.0m * (fahrenheit - 32m);
+        var celcius =  5.0f / 9.0f * (fahrenheit - 32f);
 
         return celcius.ToString("0.0");
     }
 
-    public static string InHgtohPa(this decimal inHg)
+    public static string InHgtohPa(this float inHg)
     {
-        var hPa = inHg * 33.86389m;
+        var hPa = inHg * 33.86389f;
 
         return hPa.ToString("0.000");
     }
 
-    public static string MphtoKmh(this decimal mph)
+    public static string MphtoKmh(this float mph)
     {
-        var kmh = mph * 1.609344m;
+        var kmh = mph * 1.609344f;
 
         return kmh.ToString("0.00");
     }
 
-    public static string IntoMm(this decimal inch)
+    public static string IntoMm(this float inch)
     {
-        var mm = inch * 25.4m;
+        var mm = inch * 25.4f;
 
         return mm.ToString("0.000");
     }
 
-    public static string DegreesToCardinalDetailed(this decimal degrees)
+    public static string DegreesToCardinalDetailed(this float degrees)
     {
-        degrees *= 10;
+        degrees *= 10f;
         
-        return cardinals[(int)Math.Round((degrees % 3600) / 225)];
+        return cardinals[(int)MathF.Round((degrees % 3600f) / 225f)];
     }
 
-    private static string SectoHumain(this decimal second)
+    private static string SectoHumain(this float second)
     {
         var result = TimeSpan.FromSeconds((long)second).ToString(@"d'd 'h'h 'm'm 's's'");
 
