@@ -18,6 +18,7 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
     }
 
     private readonly ConcurrentDictionary<TClientId, Channel<TMessage>> _clients = new();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<TClientId, Channel<TMessage>>> _clientsByName = new();
 
     public bool IsAlreadySubscribed(TClientId client) => _clients.ContainsKey(client);
 
@@ -37,11 +38,17 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
             throw new InvalidOperationException($"Client '{client}' already subscribed.");
         }
 
+        if (client is IChannelSubscriber sub)
+        {
+            _clientsByName
+                .GetOrAdd(sub.ChannelNameId, _ => new ConcurrentDictionary<TClientId, Channel<TMessage>>())
+                .TryAdd(client, channel);
+        }
+
         // Guard against racing with Dispose
         if (Volatile.Read(ref _disposed) == 1)
         {
-            _clients.TryRemove(client, out _);
-            channel.Writer.TryComplete();
+            Unsubscribe(client); 
             throw new ObjectDisposedException(nameof(EventBroadcaster<,>));
         }
 
@@ -53,6 +60,18 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
         if (_clients.TryRemove(client, out var channel))
         {
             channel.Writer.TryComplete();
+
+            if (client is IChannelSubscriber sub && 
+                _clientsByName.TryGetValue(sub.ChannelNameId, out var namedClients))
+            {
+                namedClients.TryRemove(client, out _);
+
+                if (namedClients.IsEmpty)
+                {
+                    _clientsByName.TryRemove(sub.ChannelNameId, out _);
+                }
+            }
+
             return true;
         }
 
@@ -63,9 +82,9 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
     {
         CheckIfDisposed();
 
-        foreach (var (key, channel) in _clients)
+        if (_clientsByName.TryGetValue(channelNameId, out var namedClients))
         {
-            if(key is IChannelSubscriber sub && sub.ChannelNameId == channelNameId)
+            foreach (var (key, channel) in namedClients)
             {
                 if (!channel.Writer.TryWrite(message))
                 {
