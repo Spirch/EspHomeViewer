@@ -64,11 +64,14 @@ public class SseClient : IAsyncDisposable
         var cts = new CancellationTokenSource();
         if (Interlocked.CompareExchange(ref cancellationTokenSource, cts, null) == null)
         {
-            cancellationTokenSource = new CancellationTokenSource();
             _uri = uri;
 
             runningInstance = StartMonitoringAsync();
             success = true;
+        }
+        else
+        {
+            cts.Dispose();
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Start {uri} End", nameof(SseClient), uri);
