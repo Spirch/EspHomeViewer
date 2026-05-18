@@ -169,31 +169,34 @@ public class SseClient : IAsyncDisposable
 
         using var cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, timeoutTokenSource.Token);
 
-        await foreach (var item in parser.EnumerateAsync(cancellationToken.Token))
+        try
         {
-            if (timeoutTokenSource.IsCancellationRequested)
+            await foreach (var item in parser.EnumerateAsync(cancellationToken.Token))
             {
-                throw new TimeoutException($"{uri} cancellationTokenTimeout");
+                if (string.Equals(item.EventType, "state", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, item.Data);
+
+                    timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
+
+                    var espEvent = JsonSerializer.Deserialize<EspEvent>(item.Data, jsonOptions);
+
+                    _espHomeData.UpdateData(espEvent);
+                }
+                else if (string.Equals(item.EventType, "weather", StringComparison.OrdinalIgnoreCase))
+                {
+                    timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
+
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
+
+                    _channelSubscriberEcoWitt.Broadcast(dict);
+                }
             }
-
-            if (string.Equals(item.EventType, "state", StringComparison.OrdinalIgnoreCase))
-            {
-                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("{Class} MonitoringAsync {uri} : {data}", nameof(SseClient), uri, item.Data);
-
-                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
-
-                var espEvent = JsonSerializer.Deserialize<EspEvent>(item.Data, jsonOptions);
-
-                _espHomeData.UpdateData(espEvent);
-            }
-            else if(string.Equals(item.EventType, "weather", StringComparison.OrdinalIgnoreCase))
-            {
-                timeoutTokenSource.CancelAfter(TimeSpan.FromSeconds(_espHomeData.EsphomeOptions.SseClient.TimeoutDelay));
-
-                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
-
-                _channelSubscriberEcoWitt.Broadcast(dict);
-            }
+        }
+        catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested &&
+                                                 !cancellationTokenSource.IsCancellationRequested)
+        {
+            throw new TimeoutException($"{uri} timed out waiting for SSE event");
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} MonitoringAsync {uri} End", nameof(SseClient), uri);
