@@ -46,13 +46,20 @@ public static class EnvironmentCanadaWeather
         (MagnusA * temperatureC / (MagnusB + temperatureC))
         + MathF.Log((relativeHumidity / HumidityDivisor));
 
-    public static string CalculateDewPoint(float temperatureC, float relativeHumidity)
+    public static float CalculateDewPointValue(float temperatureC, float relativeHumidity)
     {
-        if (relativeHumidity <= HumidityMin || relativeHumidity > HumidityMax) return temperatureC.ToString(TemperatureFormat);
-        if (temperatureC < DewPointMinTempC || temperatureC > DewPointMaxTempC) return temperatureC.ToString(TemperatureFormat);
+        if (relativeHumidity <= HumidityMin || relativeHumidity > HumidityMax) return temperatureC;
+        if (temperatureC < DewPointMinTempC || temperatureC > DewPointMaxTempC) return temperatureC;
 
         float alpha = CalculateAlpha(temperatureC, relativeHumidity);
         float dewPoint = (MagnusB * alpha) / (MagnusA - alpha);
+
+        return dewPoint;
+    }
+
+    public static string CalculateDewPoint(float temperatureC, float relativeHumidity)
+    {
+        var dewPoint = CalculateDewPointValue(temperatureC, relativeHumidity);
 
         return MathF.Round(dewPoint, 1).ToString(TemperatureFormat);
     }
@@ -62,7 +69,7 @@ public static class EnvironmentCanadaWeather
         if (temperatureC < HumidexMinTempC) return temperatureC.ToString(TemperatureFormat);
         if (relativeHumidity <= HumidityMin || relativeHumidity > HumidityMax) return temperatureC.ToString(TemperatureFormat);
 
-        float dewPointC = float.Parse(CalculateDewPoint(temperatureC, relativeHumidity));
+        float dewPointC = CalculateDewPointValue(temperatureC, relativeHumidity);
         float e = HumidexVapourBase
                           * MathF.Exp((HumidexVapourCoefficient
                           * (1.0f / HumidexKelvinOffset1 - 1.0f / (HumidexKelvinOffset2 + dewPointC))));
