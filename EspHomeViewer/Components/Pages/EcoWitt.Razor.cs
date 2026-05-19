@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using EspHomeViewer.Components.Control;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SseLib.ChannelLib;
 using System;
@@ -11,6 +13,9 @@ namespace EspHomeViewer.Components.Pages;
 
 public partial class EcoWitt : IChannelSubscriber, IDisposable
 {
+    [Inject]
+    private Logger<EcoWitt> Logger { get; set; }
+
     [Inject]
     private EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> ChannelSubscriber { get; set; }
 
@@ -58,7 +63,7 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    //do nothing
+                    Logger.LogError(ex, "ListenEventSubscriber");
                 }
             }
         }, weatherDataCT.Token);

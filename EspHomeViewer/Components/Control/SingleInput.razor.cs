@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using SseLib.ChannelLib;
 using SseLib.ChannelLib.Dto;
 using System;
@@ -9,6 +10,9 @@ namespace EspHomeViewer.Components.Control;
 
 public partial class SingleInput : IChannelSubscriber, IDisposable
 {
+    [Inject]
+    private Logger<SingleInput> Logger { get; set; }
+
     [Inject]
     private EspHomeData EspHomeData { get; set; }
 
@@ -68,7 +72,7 @@ public partial class SingleInput : IChannelSubscriber, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    //double nothing
+                    Logger.LogError(ex, "ListenEventSubscriber");
                 }
             }
         }, channelSubscriberCT.Token);

@@ -93,6 +93,8 @@ public sealed class SseClientManager : IHostedService, IAsyncDisposable
         if(!success)
         {
             await sseClient.DisposeAsync();
+
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient failed {uri}", nameof(SseClientManager), uri);
         }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} AddClient {uri} End", nameof(SseClientManager), uri);
