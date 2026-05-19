@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using SseLib.ChannelLib;
+using SseLib.ChannelLib.Dto;
 using SseLib.Core.Dto;
 using System;
 using System.Collections.Generic;

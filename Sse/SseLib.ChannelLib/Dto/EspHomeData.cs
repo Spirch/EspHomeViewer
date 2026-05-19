@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SseLib.ChannelLib;
+using SseLib.Core.Dto;
 using SseLib.Core.Helper;
 using SseLib.Core.Option;
 using System;
@@ -9,7 +9,7 @@ using System.Collections.Frozen;
 using System.Linq;
 using System.Threading;
 
-namespace SseLib.Core.Dto;
+namespace SseLib.ChannelLib.Dto;
 
 /// <summary>
 /// Singleton to hold esphome options and data
@@ -30,7 +30,7 @@ public sealed class EspHomeData : IDisposable
 
     private volatile EspHomeSnapshot _snapshot;
 
-    public EspHomeData(IOptionsMonitor<EsphomeOptions> esphomeOptionsMonitor,
+    public EspHomeData(IOptionsMonitor<EsphomeOptions> options,
                        EventBroadcaster<IChannelSubscriber, EspEvent> channelSubscriber,
                        EventBroadcaster<IChannelSubscriber, IChannelSubscriber> channelSubscriberUpdate,
                        ILogger<EspHomeData> logger)
@@ -39,9 +39,9 @@ public sealed class EspHomeData : IDisposable
         _channelSubscriberEspEvent = channelSubscriber;
         _channelSubscriberUpdate = channelSubscriberUpdate;
 
-        RefreshFrozenDictionary(esphomeOptionsMonitor.CurrentValue);
+        RefreshFrozenDictionary(options.CurrentValue);
 
-        _esphomeOptionsDispose = esphomeOptionsMonitor.OnChange(OnOptionChanged);
+        _esphomeOptionsDispose = options.OnChange(OnOptionChanged);
     }
 
     /// <summary>

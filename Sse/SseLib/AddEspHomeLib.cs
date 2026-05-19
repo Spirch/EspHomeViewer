@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SseLib.ChannelLib;
+using SseLib.ChannelLib.Dto;
 using SseLib.Client;
 using SseLib.Core.Dto;
 using SseLib.Core.Option;

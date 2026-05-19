@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SseLib.Api.Helper;
 using SseLib.ChannelLib;
 using SseLib.Core.Dto;
+using SseLib.Core.Option;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,10 +21,10 @@ public class MinimalApi
     {
         app.MapPost("/weatherforecast", async (HttpContext httpContext,
                                                ILogger<MinimalApi> logger,
-                                               EventBroadcaster<string, EcoWittSse> broadcaster) =>
+                                               EventBroadcaster<string, EcoWittSse> broadcaster,
+                                               IOptions<EsphomeOptions> options) =>
         {
-            //todo port in config
-            if(httpContext.Connection.LocalPort == 5163)
+            if(httpContext.Connection.LocalPort == options.Value.SseClient.EcoWittServerPort)
             {
                 if (logger.IsEnabled(LogLevel.Debug)) logger.LogDebug("Post from {ip}", httpContext.Connection.RemoteIpAddress);
 

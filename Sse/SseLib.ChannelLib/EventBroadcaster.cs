@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SseLib.Core.Option;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -11,12 +13,15 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
     private int _disposed; // 0 = false, 1 = true
 
     private readonly ILogger<EventBroadcaster<TClientId, TMessage>> _logger;
+    private readonly int channelBoundSize;
 
-    public EventBroadcaster(ILogger<EventBroadcaster<TClientId, TMessage>> logger)
+    public EventBroadcaster(ILogger<EventBroadcaster<TClientId, TMessage>> logger, IOptions<EsphomeOptions> options)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
         _logger = logger;
+
+        channelBoundSize = options.Value.SseClient.ChannelLimit;
     }
 
     private readonly ConcurrentDictionary<TClientId, Channel<TMessage>> _clients = new();
@@ -28,9 +33,8 @@ public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TC
     {
         CheckIfDisposed();
 
-        //todo use IConfiguration to configure the channel
         var channel = Channel.CreateBounded<TMessage>(
-            new BoundedChannelOptions(100)
+            new BoundedChannelOptions(channelBoundSize)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
             });

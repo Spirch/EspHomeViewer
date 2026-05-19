@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using SseLib.ChannelLib;
-using SseLib.Core.Dto;
+using SseLib.ChannelLib.Dto;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

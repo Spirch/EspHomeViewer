@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SseLib.ChannelLib;
+using SseLib.ChannelLib.Dto;
 using SseLib.Core.Dto;
 using SseLib.Database.Context;
 using SseLib.Database.Context.Model;

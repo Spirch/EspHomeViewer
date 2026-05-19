@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SseLib.Core\SseLib.Core.csproj" />
+    <ProjectReference Include="..\SseLib.ChannelLib\SseLib.ChannelLib.csproj" />
   </ItemGroup>
 
 </Project>
