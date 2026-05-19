@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace EspHomeLib.HostedServices;
 
-public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
+public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
 {
     private int _disposed; // 0 = false, 1 = true
 

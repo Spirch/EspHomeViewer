@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib.HostedServices;
-public class SseClientManager : IHostedService, IAsyncDisposable
+public sealed class SseClientManager : IHostedService, IAsyncDisposable
 {
     private int _disposed; // 0 = false, 1 = true
 

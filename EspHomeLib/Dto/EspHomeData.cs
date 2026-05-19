@@ -14,7 +14,7 @@ namespace EspHomeLib.Dto;
 /// <summary>
 /// Singleton to hold esphome options and data
 /// </summary>
-public class EspHomeData : IDisposable
+public sealed class EspHomeData : IDisposable
 {
     private readonly IDisposable _esphomeOptionsDispose;
     private readonly ILogger<EspHomeData> _logger;

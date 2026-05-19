@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeLib;
-public class SseClient : IAsyncDisposable
+public sealed class SseClient : IAsyncDisposable
 {
     private int _disposed; // 0 = false, 1 = true
 
