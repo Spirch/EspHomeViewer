@@ -2,7 +2,7 @@
 
 namespace SseLib.Core.Dto;
 
-public class EcoWittSse
+public sealed class EcoWittSse
 {
     private static long _id;
     public long Id { get; private set; }

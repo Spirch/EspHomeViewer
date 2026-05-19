@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace SseLib.Core.Dto;
 
-public class EspEvent
+public sealed class EspEvent
 {
     public override string ToString()
     {

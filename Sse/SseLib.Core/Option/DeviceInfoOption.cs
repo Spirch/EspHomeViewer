@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace SseLib.Core.Option;
-public class DeviceInfoOption
+public sealed class DeviceInfoOption
 {
     [Required]
     public string Name { get; set; }

@@ -2,7 +2,7 @@
 
 namespace SseLib.Core.Dto;
 
-public class MergeInfo
+public sealed class MergeInfo
 {
     public DeviceInfoOption DeviceInfo { get; set; }
     public StatusInfoOption StatusInfo { get; set; }

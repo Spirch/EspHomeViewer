@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SseLib.Core.Option;
 
-public class EsphomeOptions
+public sealed class EsphomeOptions
 {
     [Required]
     public List<Uri> Uri { get; set; } = new();

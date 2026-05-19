@@ -2,7 +2,7 @@
 
 namespace SseLib.Core.Dto;
 
-public class FriendlyDisplay
+public sealed class FriendlyDisplay
 {
     public string DeviceName { get; set; }
     public string Name { get; set; }

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace SseLib.Tool;
 
-public class GraphServices
+public sealed class GraphServices
 {
     public static class Key
     {

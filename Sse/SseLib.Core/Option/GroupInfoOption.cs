@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace SseLib.Core.Option;
-public class GroupInfoOption
+
+public sealed class GroupInfoOption
 {
     [Required]
     public string Id { get; set; }
@@ -12,6 +13,7 @@ public class GroupInfoOption
     [Required]
     public string Unit { get; set; }
     [Required]
+    [Range(1, int.MaxValue)]
     public int RecordThrottle { get; set; }
 
     public override string ToString()

@@ -1,6 +1,6 @@
 ﻿namespace SseLib.Core.Option;
 
-public class SseClientOption
+public sealed class SseClientOption
 {
     public int PingTimeout { get; set; } = 1;
     public int PingDelay { get; set; } = 5;

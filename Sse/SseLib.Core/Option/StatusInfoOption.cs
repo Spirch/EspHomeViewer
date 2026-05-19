@@ -2,7 +2,7 @@
 
 namespace SseLib.Core.Option;
 
-public class StatusInfoOption
+public sealed class StatusInfoOption
 {
     [Required]
     public string Prefix { get; set; }
