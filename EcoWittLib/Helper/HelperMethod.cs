@@ -1,4 +1,7 @@
-﻿namespace EcoWittLib.Helper;
+﻿using System;
+using System.Collections.Generic;
+
+namespace EcoWittLib.Helper;
 
 public static class HelperMethod
 {

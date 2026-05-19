@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <Nullable>annotations</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
+      <ImplicitUsings>disable</ImplicitUsings>
+      <Nullable>enable</Nullable>
   </PropertyGroup>
 
     <PropertyGroup>
@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EcoWittLib\EcoWittLib.csproj" />
-    <ProjectReference Include="..\EspHomeLib\EspHomeLib.csproj" />
+    <ProjectReference Include="..\SseLib\SseLib.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,6 @@
-﻿namespace EcoWittLib;
+﻿using System.Threading;
+
+namespace EcoWittLib;
 
 public class EcoWittSse
 {

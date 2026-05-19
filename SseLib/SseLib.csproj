@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SseLib.Client\SseLib.Client.csproj" />
+    <ProjectReference Include="..\SseLib.Core\SseLib.Core.csproj" />
+    <ProjectReference Include="..\SseLib.Database\SseLib.Database.csproj" />
+    <ProjectReference Include="..\SseLib.Tool\SseLib.Tool.csproj" />
+  </ItemGroup>
+
+</Project>
