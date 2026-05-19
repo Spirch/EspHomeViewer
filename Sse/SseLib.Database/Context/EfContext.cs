@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SseLib.Core.Database.Model;
+using SseLib.Database.Context.Model;
 using System.IO;
 
-namespace SseLib.Core.Database;
+namespace SseLib.Database.Context;
 
 public sealed class EfContext : DbContext
 {

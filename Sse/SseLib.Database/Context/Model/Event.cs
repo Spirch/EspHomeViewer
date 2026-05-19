@@ -1,7 +1,7 @@
 ﻿using SseLib.Core.Dto;
 using SseLib.Core.Helper;
 
-namespace SseLib.Core.Database.Model;
+namespace SseLib.Database.Context.Model;
 
 public sealed class Event : IDbItem
 {

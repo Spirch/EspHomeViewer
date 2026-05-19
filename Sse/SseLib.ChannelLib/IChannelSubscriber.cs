@@ -1,4 +1,4 @@
-﻿namespace ChannelLib;
+﻿namespace SseLib.ChannelLib;
 
 public interface IChannelSubscriber
 {

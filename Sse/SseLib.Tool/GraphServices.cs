@@ -4,7 +4,7 @@ using ScottPlot;
 using ScottPlot.AxisPanels;
 using ScottPlot.TickGenerators;
 using ScottPlot.TickGenerators.TimeUnits;
-using SseLib.Core.Database;
+using SseLib.Database.Context;
 using System;
 using System.Linq;
 using System.Threading.Tasks;

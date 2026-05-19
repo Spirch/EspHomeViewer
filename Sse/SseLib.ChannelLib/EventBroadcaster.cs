@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Channels;
 
-namespace ChannelLib;
+namespace SseLib.ChannelLib;
 
 public sealed class EventBroadcaster<TClientId, TMessage> : IDisposable where TClientId: notnull
 {

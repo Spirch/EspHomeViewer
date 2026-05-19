@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Channels;
 
-namespace ChannelLib;
+namespace SseLib.ChannelLib;
 
 public sealed class EventSubscriber<T> : IDisposable
 {

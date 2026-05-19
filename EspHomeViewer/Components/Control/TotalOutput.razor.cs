@@ -1,5 +1,5 @@
-﻿using ChannelLib;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
+using SseLib.ChannelLib;
 using SseLib.Core.Dto;
 using System;
 using System.Threading;

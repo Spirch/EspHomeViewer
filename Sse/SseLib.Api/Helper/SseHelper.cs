@@ -1,5 +1,5 @@
-﻿using ChannelLib;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using SseLib.ChannelLib;
 using SseLib.Core.Dto;
 using System;
 using System.Text;

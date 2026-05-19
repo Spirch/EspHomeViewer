@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SseLib.Core.Database.Model;
+namespace SseLib.Database.Context.Model;
 
 public sealed class RowEntry : IDbItem
 {

@@ -1,7 +1,7 @@
-﻿using SseLib.Core.Database.Model;
+﻿using SseLib.Database.Context.Model;
 using System.Diagnostics;
 
-namespace SseLib.Core.Dto;
+namespace SseLib.Database.Dto;
 public class RecordData
 {
     public RowEntry RowEntry { get; set; }
