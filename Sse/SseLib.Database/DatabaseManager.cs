@@ -54,34 +54,34 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
         _channelSubscriberException = channelSubscriberException;
     }
 
-    private void OnEspHomeOptionChanged(object? sender, EventArgs e)
+    private async void OnEspHomeOptionChanged(object? sender, EventArgs e)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnEspHomeOptionChanged Start", nameof(DatabaseManager));
 
-        InitOption();
+        try
+        {
+            await InitOptionAsync();
+        }
+        catch (Exception ex) 
+        {
+            _logger.LogError(ex, "OnEspHomeOptionChanged");
+        }
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} OnEspHomeOptionChanged End", nameof(DatabaseManager));
     }
 
-    private void InitOption()
+    private async Task InitOptionAsync()
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(DatabaseManager));
 
-        InitRecordData();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(DatabaseManager));
-    }
-
-    private void InitRecordData()
-    {
         using var scope = _serviceScopeFactory.CreateScope();
         using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
 
         foreach (var device in _espHomeData.MergeInfo)
         {
-            RowEntry rowEntry = efContext.RowEntry
-                                            .FirstOrDefault(x => x.Name == device.Key &&
-                                                                x.FriendlyName == device.Value.DeviceInfo.DeviceName);
+            var rowEntry = await efContext.RowEntry
+                                          .FirstOrDefaultAsync(x => x.Name == device.Key &&
+                                                                    x.FriendlyName == device.Value.DeviceInfo.DeviceName);
 
             if (rowEntry == null)
             {
@@ -115,7 +115,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
         foreach (var group in _espHomeData.EsphomeOptions.GroupInfo)
         {
-            RowEntry rowEntry = efContext.RowEntry.FirstOrDefault(x => x.Name == group.Id);
+            var rowEntry = await efContext.RowEntry.FirstOrDefaultAsync(x => x.Name == group.Id);
 
             if (rowEntry == null)
             {
@@ -145,14 +145,16 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
             data.RecordThrottle = group.RecordThrottle;
         }
 
-        efContext.SaveChanges();
+        await efContext.SaveChangesAsync();
+
+        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(DatabaseManager));
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(DatabaseManager));
 
-        InitOption();
+        await InitOptionAsync();
 
         eventSubscriberEspEvent = _channelSubscriberEspEvent.Subscribe(this);
         eventSubscriberException = _channelSubscriberException.Subscribe(this);
@@ -163,8 +165,6 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
         DealWithDb();
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(DatabaseManager));
-
-        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

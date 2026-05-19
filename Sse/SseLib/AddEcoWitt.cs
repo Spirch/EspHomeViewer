@@ -20,7 +20,7 @@ public static class AddEcoWittLib
         return services;
     }
 
-    public static async Task<WebApplication> UseEcoWittAsync(this WebApplication app)
+    public static WebApplication UseEcoWitt(this WebApplication app)
     {
         MinimalApi.Map(app);
 

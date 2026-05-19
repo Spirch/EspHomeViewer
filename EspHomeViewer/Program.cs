@@ -29,7 +29,7 @@ var app = builder.Build();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-await app.UseEcoWittAsync();
+app.UseEcoWitt();
 
 app.MapGet("/", (HttpContext httpContext) => Results.NotFound());
 
