@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace EcoWittLib;
+namespace SseLib.Core.Dto;
 
 public class EcoWittSse
 {

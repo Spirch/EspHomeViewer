@@ -2,10 +2,13 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SseLib.Api;
+using SseLib.Api.Helper;
+using SseLib.Core.Dto;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace EcoWittLib.Helper;
+namespace SseLib;
 
 public static class AddEcoWittLib
 {

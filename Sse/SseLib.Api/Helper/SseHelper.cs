@@ -1,11 +1,12 @@
 ﻿using ChannelLib;
 using Microsoft.AspNetCore.Http;
+using SseLib.Core.Dto;
 using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EcoWittLib.Helper;
+namespace SseLib.Api.Helper;
 
 public static class SseHelper
 {

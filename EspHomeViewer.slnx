@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Sse/">
+    <Project Path="Sse/SseLib.Api/SseLib.Api.csproj" Id="c2fa9b01-e2a6-44d6-a265-6be6761d572f" />
     <Project Path="Sse/SseLib.Client/SseLib.Client.csproj" />
     <Project Path="Sse/SseLib.Core/SseLib.Core.csproj" />
     <Project Path="Sse/SseLib.Database/SseLib.Database.csproj" />
@@ -7,6 +8,5 @@
     <Project Path="Sse/SseLib/SseLib.csproj" />
   </Folder>
   <Project Path="ChannelLib/ChannelLib.csproj" />
-  <Project Path="EcoWittLib/EcoWittLib.csproj" />
   <Project Path="EspHomeViewer/EspHomeViewer.csproj" />
 </Solution>

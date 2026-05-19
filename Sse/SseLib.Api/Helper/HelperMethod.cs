@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EcoWittLib.Helper;
+namespace SseLib.Api.Helper;
 
 public static class HelperMethod
 {

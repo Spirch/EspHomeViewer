@@ -1,8 +1,9 @@
 ﻿using ChannelLib;
-using EcoWittLib.Helper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using SseLib.Api.Helper;
+using SseLib.Core.Dto;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,7 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Web;
 
-namespace EcoWittLib;
+namespace SseLib.Api;
 
 public class MinimalApi
 {
