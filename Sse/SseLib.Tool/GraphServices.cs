@@ -7,6 +7,7 @@ using ScottPlot.TickGenerators.TimeUnits;
 using SseLib.Database.Context;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SseLib.Tool;
@@ -30,45 +31,50 @@ public class GraphServices
         _serviceScopeFactory = serviceScopeFactory;
     }
 
-    public async Task<byte[]> GraphAsync(string name, string friendlyName, int days)
+    public async Task<byte[]> GraphAsync(string name, string friendlyName, int days, CancellationToken cancellationToken)
     {
         byte[] result = null;
-
 
         using var scope = _serviceScopeFactory.CreateScope();
         using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
 
-        var meta = await efContext.RowEntry
+        try
+        {
+            var meta = await efContext.RowEntry
                                    .AsNoTracking()
                                    .FirstOrDefaultAsync(x => x.Name == name &&
-                                   (string.IsNullOrEmpty(friendlyName) || x.FriendlyName == friendlyName));
+                                   (string.IsNullOrEmpty(friendlyName) || x.FriendlyName == friendlyName), cancellationToken: cancellationToken);
 
-        if (meta != null)
+            if (meta != null)
+            {
+                var unixFilter = days > 0 ? DateTimeOffset.Now.AddDays(-days).ToUnixTimeSeconds() : 0;
+                var data = await efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId)
+                                                 .Select(x => new { x.Data, x.UnixTime, })
+                                                 .ToListAsync(cancellationToken: cancellationToken);
+
+                var xs = data.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.UnixTime).LocalDateTime).ToList();
+                var ys = data.Select(x => x.Data).ToList();
+
+                using var myPlot = new Plot();
+
+                var plotData = myPlot.Add.ScatterPoints(xs, ys);
+
+                var interval = myPlot.Axes.DateTimeTicksBottom();
+                SetTickGenerator(days, interval);
+
+                plotData.LegendText = $"{meta.FriendlyName} - {meta.Unit}";
+                myPlot.ShowLegend();
+                myPlot.Axes.AutoScaler = new ScottPlot.AutoScalers.FractionalAutoScaler(.01, .015);
+                myPlot.Axes.AutoScale();
+
+                result = myPlot.GetImageBytes(10000, 1000, ImageFormat.Png);
+
+                xs.Clear(); xs.TrimExcess();
+                ys.Clear(); ys.TrimExcess();
+            }
+        }
+        catch (OperationCanceledException)
         {
-            var unixFilter = days > 0 ? DateTimeOffset.Now.AddDays(-days).ToUnixTimeSeconds() : 0;
-            var data = await efContext.Event.Where(x => x.UnixTime >= unixFilter && x.RowEntryId == meta.RowEntryId)
-                                             .Select(x => new { x.Data, x.UnixTime, })
-                                             .ToListAsync();
-
-            var xs = data.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.UnixTime).LocalDateTime).ToList();
-            var ys = data.Select(x => x.Data).ToList();
-
-            using var myPlot = new Plot();
-
-            var plotData = myPlot.Add.ScatterPoints(xs, ys);
-
-            var interval = myPlot.Axes.DateTimeTicksBottom();
-            SetTickGenerator(days, interval);
-
-            plotData.LegendText = $"{meta.FriendlyName} - {meta.Unit}";
-            myPlot.ShowLegend();
-            myPlot.Axes.AutoScaler = new ScottPlot.AutoScalers.FractionalAutoScaler(.01, .015);
-            myPlot.Axes.AutoScale();
-
-            result = myPlot.GetImageBytes(10000, 1000, ImageFormat.Png);
-
-            xs.Clear(); xs.TrimExcess();
-            ys.Clear(); ys.TrimExcess();
         }
 
         return result;

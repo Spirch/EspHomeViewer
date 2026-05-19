@@ -7,6 +7,7 @@ using SseLib.ChannelLib.Dto;
 using SseLib.Tool;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EspHomeViewer.Components.Pages;
@@ -25,8 +26,12 @@ public partial class S31 : IDisposable
     [Inject] 
     IJSRuntime JS { get; set; }
 
+    private readonly CancellationTokenSource _cts = new();
+
     public void Dispose()
     {
+        _cts.Cancel();
+        _cts.Dispose();
         EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
     }
 
@@ -72,7 +77,7 @@ public partial class S31 : IDisposable
 
             if (!string.IsNullOrEmpty(name))
             {
-                var graph = await GraphServices.GraphAsync(name, data, day);
+                var graph = await GraphServices.GraphAsync(name, data, day, _cts.Token);
 
                 if (graph != null)
                 {
