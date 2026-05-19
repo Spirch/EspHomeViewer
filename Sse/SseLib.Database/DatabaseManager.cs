@@ -102,10 +102,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
             if (!recordData.TryGetValue(rowEntry.Name, out var data))
             {
-                data = new()
-                {
-                    LastRecordSw = Stopwatch.StartNew(),
-                };
+                data = new();
 
                 recordData[rowEntry.Name] = data;
             }
@@ -139,10 +136,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
             if (!recordData.TryGetValue(rowEntry.Name, out var data))
             {
-                data = new()
-                {
-                    LastRecordSw = Stopwatch.StartNew(),
-                };
+                data = new();
 
                 recordData[rowEntry.Name] = data;
             }
@@ -287,7 +281,9 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
             if (espEvent.Event_Type == null)
             {
-                if (MathF.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta || data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (MathF.Abs(newEvent.Data - data.LastValue) >= data.RecordDelta ||
+                    (now - data.LastRecordUnix) >= data.RecordThrottle)
                 {
                     if (data.LastValue != newEvent.Data)
                     {
@@ -295,7 +291,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
                         record.Enqueue(newEvent);
                     }
 
-                    data.LastRecordSw.Restart();
+                    Interlocked.Exchange(ref data.LastRecordUnix, now);
                 }
             }
             else
@@ -326,11 +322,12 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
             {
                 newEvent.RowEntryId = data.RowEntry.RowEntryId.Value;
 
-                if (data.LastRecordSw.Elapsed.TotalSeconds >= data.RecordThrottle)
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if ((now - data.LastRecordUnix) >= data.RecordThrottle)
                 {
                     record.Enqueue(newEvent);
 
-                    data.LastRecordSw.Restart();
+                    Interlocked.Exchange(ref data.LastRecordUnix, now);
                 }
             }
             else
