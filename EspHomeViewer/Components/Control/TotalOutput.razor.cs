@@ -11,7 +11,7 @@ namespace EspHomeViewer.Components.Control;
 public partial class TotalOutput : IChannelSubscriber,  IDisposable
 {
     [Inject]
-    private Logger<TotalOutput> Logger { get; set; }
+    private ILogger<TotalOutput> Logger { get; set; }
 
     [Inject]
     private EspHomeData EspHomeData { get; set; }

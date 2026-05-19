@@ -14,7 +14,7 @@ namespace EspHomeViewer.Components.Pages;
 public partial class EcoWitt : IChannelSubscriber, IDisposable
 {
     [Inject]
-    private Logger<EcoWitt> Logger { get; set; }
+    private ILogger<EcoWitt> Logger { get; set; }
 
     [Inject]
     private EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> ChannelSubscriber { get; set; }
