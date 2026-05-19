@@ -83,6 +83,7 @@ public partial class TotalOutput : IChannelSubscriber,  IDisposable
     public void Dispose()
     {
         channelSubscriberCT?.Cancel();
+        channelSubscriberCT?.Dispose();
         channelSubscriber?.Dispose();
     }
 }

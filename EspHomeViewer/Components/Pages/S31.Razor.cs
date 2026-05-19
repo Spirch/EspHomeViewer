@@ -28,13 +28,6 @@ public partial class S31 : IDisposable
 
     private readonly CancellationTokenSource _cts = new();
 
-    public void Dispose()
-    {
-        _cts.Cancel();
-        _cts.Dispose();
-        EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
-    }
-
     protected override void OnParametersSet()
     {
         EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
@@ -97,5 +90,12 @@ public partial class S31 : IDisposable
 
             await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
         }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+        EspHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
     }
 }

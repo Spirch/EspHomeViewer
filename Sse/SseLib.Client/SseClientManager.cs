@@ -88,6 +88,11 @@ public sealed class SseClientManager : IHostedService, IAsyncDisposable
         if (_sseClients.TryAdd(uri, sseClient))
         {
             success = sseClient.Start(uri);
+
+            if(!success)
+            {
+                _sseClients.TryRemove(uri, out _);
+            }
         }
 
         if(!success)

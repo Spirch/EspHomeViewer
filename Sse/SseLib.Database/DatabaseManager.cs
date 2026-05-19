@@ -367,8 +367,8 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
 
         eventSubscriberCT?.Cancel();
-        eventSubscriberEspEvent.Dispose();
-        eventSubscriberException.Dispose();
+        eventSubscriberEspEvent?.Dispose();
+        eventSubscriberException?.Dispose();
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));

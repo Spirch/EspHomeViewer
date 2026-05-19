@@ -90,6 +90,7 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
     public void Dispose()
     {
         weatherDataCT?.Cancel();
+        weatherDataCT?.Dispose();
         eventSubscriber?.Dispose();
     }
 }

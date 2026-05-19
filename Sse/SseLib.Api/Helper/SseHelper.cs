@@ -10,7 +10,7 @@ namespace SseLib.Api.Helper;
 
 public static class SseHelper
 {
-    public static async Task StartPingAsync(EventBroadcaster<string, EcoWittSse> broadcast, CancellationToken ct)
+    public static void StartPing(EventBroadcaster<string, EcoWittSse> broadcast, CancellationToken ct)
     {
         if (broadcast != null)
         {

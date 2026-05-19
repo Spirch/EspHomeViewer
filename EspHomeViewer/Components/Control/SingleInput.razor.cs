@@ -91,6 +91,7 @@ public partial class SingleInput : IChannelSubscriber, IDisposable
     public void Dispose()
     {
         channelSubscriberCT?.Cancel();
+        channelSubscriberCT?.Dispose();
         channelSubscriber?.Dispose();
     }
 }

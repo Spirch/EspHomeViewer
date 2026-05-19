@@ -27,7 +27,7 @@ public static class AddEcoWittLib
         var broadcast = app.Services.GetRequiredService<EventBroadcaster<string, EcoWittSse>>();
         var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 
-        await SseHelper.StartPingAsync(broadcast, lifetime.ApplicationStopping);
+        SseHelper.StartPing(broadcast, lifetime.ApplicationStopping);
 
         return app;
     }
