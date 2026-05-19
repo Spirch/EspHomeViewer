@@ -1,6 +1,8 @@
-﻿namespace SseLib.Core.Option;
+﻿using SseLib.Core.Option;
 
-public class ProcessOption
+namespace SseLib.Core.Dto;
+
+public class MergeInfo
 {
     public DeviceInfoOption DeviceInfo { get; set; }
     public StatusInfoOption StatusInfo { get; set; }

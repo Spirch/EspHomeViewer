@@ -24,7 +24,7 @@ public sealed class EspHomeData : IDisposable
     private readonly EventBroadcaster<IChannelSubscriber, IChannelSubscriber> _channelSubscriberUpdate;
     private int _disposed; // 0 = false, 1 = true
 
-    private record EspHomeSnapshot(FrozenDictionary<string, ProcessOption> MergeInfo,
+    private record EspHomeSnapshot(FrozenDictionary<string, MergeInfo> MergeInfo,
                                    ConcurrentDictionary<(string, string), FriendlyDisplay> DataDisplay,
                                    EsphomeOptions Options);
 
@@ -47,7 +47,7 @@ public sealed class EspHomeData : IDisposable
     /// <summary>
     /// Dont keep a reference of this, read from this instance only
     /// </summary>
-    public FrozenDictionary<string, ProcessOption> MergeInfo => _snapshot?.MergeInfo;
+    public FrozenDictionary<string, MergeInfo> MergeInfo => _snapshot?.MergeInfo;
 
     /// <summary>
     /// Dont keep a reference of this, read from this instance only
@@ -164,7 +164,7 @@ public sealed class EspHomeData : IDisposable
                          select new
                          {
                              key = string.Concat(statusInfo.Prefix, deviceInfo.Name, statusInfo.Suffix),
-                             processOption = new ProcessOption()
+                             processOption = new MergeInfo()
                              {
                                  DeviceInfo = deviceInfo,
                                  StatusInfo = statusInfo,

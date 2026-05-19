@@ -18,7 +18,10 @@ public static class AddEspHomeLib
 {
     public static IServiceCollection AddSseManager(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<EsphomeOptions>(configuration.GetSection("EsphomeOptions"));
+        services.AddOptions<EsphomeOptions>()
+                .Bind(configuration.GetSection("EsphomeOptions"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
         services.AddSingleton<EventBroadcaster<IChannelSubscriber, Exception>>();
         services.AddSingleton<EventBroadcaster<IChannelSubscriber, EspEvent>>();
