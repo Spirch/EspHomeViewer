@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EcoWittLib\EcoWittLib.csproj" />
-    <ProjectReference Include="..\SseLib\SseLib.csproj" />
+    <ProjectReference Include="..\Sse\SseLib\SseLib.csproj" />
   </ItemGroup>
 
 </Project>

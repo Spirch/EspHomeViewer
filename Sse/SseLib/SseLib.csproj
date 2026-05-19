@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SseLib.Client\SseLib.Client.csproj" />
-    <ProjectReference Include="..\SseLib.Core\SseLib.Core.csproj" />
     <ProjectReference Include="..\SseLib.Database\SseLib.Database.csproj" />
     <ProjectReference Include="..\SseLib.Tool\SseLib.Tool.csproj" />
   </ItemGroup>

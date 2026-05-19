@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Sse/">
+    <Project Path="Sse/SseLib.Client/SseLib.Client.csproj" />
+    <Project Path="Sse/SseLib.Core/SseLib.Core.csproj" />
+    <Project Path="Sse/SseLib.Database/SseLib.Database.csproj" />
+    <Project Path="Sse/SseLib.Tool/SseLib.Tool.csproj" />
+    <Project Path="Sse/SseLib/SseLib.csproj" />
+  </Folder>
+  <Project Path="ChannelLib/ChannelLib.csproj" />
+  <Project Path="EcoWittLib/EcoWittLib.csproj" />
+  <Project Path="EspHomeViewer/EspHomeViewer.csproj" />
+</Solution>
