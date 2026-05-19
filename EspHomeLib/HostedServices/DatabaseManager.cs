@@ -18,6 +18,8 @@ namespace EspHomeLib.HostedServices;
 
 public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
 {
+    private int _disposed; // 0 = false, 1 = true
+
     private readonly EspHomeData _espHomeData;
 
     private readonly ILogger<DatabaseManager> _logger;
@@ -358,6 +360,11 @@ public class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
+            return; // idempotent
+        }
+
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(DatabaseManager));
 
         eventSubscriberCT?.Cancel();

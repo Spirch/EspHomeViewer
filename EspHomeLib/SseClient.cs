@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 namespace EspHomeLib;
 public class SseClient : IAsyncDisposable
 {
+    private int _disposed; // 0 = false, 1 = true
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EspHomeData _espHomeData;
     private readonly EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> _channelSubscriberEcoWitt;
@@ -214,6 +216,11 @@ public class SseClient : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
+            return; // idempotent
+        }
+
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose {_uri} Start", nameof(SseClient), _uri);
 
         cancellationTokenSource?.Cancel();

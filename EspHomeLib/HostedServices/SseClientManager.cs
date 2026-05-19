@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 namespace EspHomeLib.HostedServices;
 public class SseClientManager : IHostedService, IAsyncDisposable
 {
+    private int _disposed; // 0 = false, 1 = true
+
     private readonly EspHomeData _espHomeData;
 
     private readonly IServiceProvider _serviceProvider;
@@ -119,6 +121,11 @@ public class SseClientManager : IHostedService, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
+            return; // idempotent
+        }
+
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose Start", nameof(SseClientManager));
 
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;

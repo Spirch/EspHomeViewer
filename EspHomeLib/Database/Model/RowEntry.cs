@@ -2,7 +2,7 @@
 
 namespace EspHomeLib.Database.Model;
 
-sealed public class RowEntry : IDbItem
+public sealed class RowEntry : IDbItem
 {
     public int? RowEntryId { get; set; }
     public string Name { get; set; }
