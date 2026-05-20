@@ -10,19 +10,23 @@ namespace SseLib.Api.Helper;
 
 public static class SseHelper
 {
+    private static int _pingStarted = 0;
+
     public static void StartPing(EventBroadcaster<string, EcoWittSse> broadcast, CancellationToken ct)
     {
-        if (broadcast != null)
+        ArgumentNullException.ThrowIfNull(broadcast);
+
+        if (Interlocked.Exchange(ref _pingStarted, 1) == 1)
+            return; // already started
+
+        _ = Task.Run(async () =>
         {
-            _ = Task.Run(async () =>
+            using PeriodicTimer ping = new(TimeSpan.FromSeconds(30));
+            while (await ping.WaitForNextTickAsync(ct))
             {
-                using PeriodicTimer ping = new(TimeSpan.FromSeconds(30));
-                while (await ping.WaitForNextTickAsync(ct))
-                {
-                    broadcast.Broadcast(EcoWittSse.Create("keepalive", "ping"));
-                }
-            }, ct);
-        }
+                broadcast.Broadcast(EcoWittSse.Create("keepalive", "ping"));
+            }
+        }, ct);
     }
 
     public static async Task WriteEventAsync(this HttpResponse response,

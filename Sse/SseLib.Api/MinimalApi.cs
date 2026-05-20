@@ -15,7 +15,7 @@ using System.Web;
 
 namespace SseLib.Api;
 
-public class MinimalApi
+public sealed class MinimalApi
 {
     public static void Map(WebApplication app)
     {
