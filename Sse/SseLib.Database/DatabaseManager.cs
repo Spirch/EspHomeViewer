@@ -18,9 +18,11 @@ using System.Threading.Tasks;
 
 namespace SseLib.Database;
 
-public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDisposable
+public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IAsyncDisposable
 {
     private int _disposed; // 0 = false, 1 = true
+
+    private SemaphoreSlim initOptionRunning = new(1,1);
 
     private readonly EspHomeData _espHomeData;
 
@@ -37,6 +39,10 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
     private readonly ConcurrentDictionary<string, RecordData> recordData = new();
 
     private readonly ConcurrentQueue<IDbItem> record = new();
+
+    private Task dealWithDbTask;
+    private Task espEventTask;
+    private Task exceptionTask;
 
     public string ChannelNameId => nameof(DatabaseManager);
 
@@ -72,82 +78,91 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
     private async Task InitOptionAsync()
     {
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(DatabaseManager));
+        await initOptionRunning.WaitAsync();
 
-        using var scope = _serviceScopeFactory.CreateScope();
-        using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
-
-        foreach (var device in _espHomeData.MergeInfo)
+        try
         {
-            var rowEntry = await efContext.RowEntry
-                                          .FirstOrDefaultAsync(x => x.Name == device.Key &&
-                                                                    x.FriendlyName == device.Value.DeviceInfo.DeviceName);
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption Start", nameof(DatabaseManager));
 
-            if (rowEntry == null)
+            using var scope = _serviceScopeFactory.CreateScope();
+            using var efContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+
+            foreach (var device in _espHomeData.MergeInfo)
             {
-                rowEntry = new RowEntry()
+                var rowEntry = await efContext.RowEntry
+                                              .FirstOrDefaultAsync(x => x.Name == device.Key &&
+                                                                        x.FriendlyName == device.Value.DeviceInfo.DeviceName);
+
+                if (rowEntry == null)
                 {
-                    Name = device.Key,
-                    FriendlyName = device.Value.DeviceInfo.DeviceName,
-                    Unit = device.Value.StatusInfo.Unit,
-                };
+                    rowEntry = new RowEntry()
+                    {
+                        Name = device.Key,
+                        FriendlyName = device.Value.DeviceInfo.DeviceName,
+                        Unit = device.Value.StatusInfo.Unit,
+                    };
 
-                efContext.Add(rowEntry);
+                    efContext.Add(rowEntry);
+                }
+                else
+                {
+                    rowEntry.FriendlyName = device.Value.DeviceInfo.DeviceName;
+                    rowEntry.Unit = device.Value.StatusInfo.Unit;
+                }
+
+                if (!recordData.TryGetValue(rowEntry.Name, out var data))
+                {
+                    data = new();
+
+                    recordData[rowEntry.Name] = data;
+                }
+
+                data.RowEntry = rowEntry;
+                data.RecordDelta = device.Value.StatusInfo.RecordDelta;
+                data.RecordThrottle = device.Value.StatusInfo.RecordThrottle;
+                data.GroupInfoName = device.Value.StatusInfo.GroupInfoName;
             }
-            else
+
+            foreach (var group in _espHomeData.EsphomeOptions.GroupInfo)
             {
-                rowEntry.FriendlyName = device.Value.DeviceInfo.DeviceName;
-                rowEntry.Unit = device.Value.StatusInfo.Unit;
+                var rowEntry = await efContext.RowEntry.FirstOrDefaultAsync(x => x.Name == group.Id);
+
+                if (rowEntry == null)
+                {
+                    rowEntry = new RowEntry()
+                    {
+                        Name = group.Id,
+                        FriendlyName = group.Title,
+                        Unit = group.Unit,
+                    };
+
+                    efContext.Add(rowEntry);
+                }
+                else
+                {
+                    rowEntry.FriendlyName = group.Title;
+                    rowEntry.Unit = group.Unit;
+                }
+
+                if (!recordData.TryGetValue(rowEntry.Name, out var data))
+                {
+                    data = new();
+
+                    recordData[rowEntry.Name] = data;
+                }
+
+                data.RowEntry = rowEntry;
+                data.RecordThrottle = group.RecordThrottle;
             }
 
-            if (!recordData.TryGetValue(rowEntry.Name, out var data))
-            {
-                data = new();
+            await efContext.SaveChangesAsync();
 
-                recordData[rowEntry.Name] = data;
-            }
-
-            data.RowEntry = rowEntry;
-            data.RecordDelta = device.Value.StatusInfo.RecordDelta;
-            data.RecordThrottle = device.Value.StatusInfo.RecordThrottle;
-            data.GroupInfoName = device.Value.StatusInfo.GroupInfoName;
+            if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(DatabaseManager));
         }
-
-        foreach (var group in _espHomeData.EsphomeOptions.GroupInfo)
+        finally
         {
-            var rowEntry = await efContext.RowEntry.FirstOrDefaultAsync(x => x.Name == group.Id);
-
-            if (rowEntry == null)
-            {
-                rowEntry = new RowEntry()
-                {
-                    Name = group.Id,
-                    FriendlyName = group.Title,
-                    Unit = group.Unit,
-                };
-
-                efContext.Add(rowEntry);
-            }
-            else
-            {
-                rowEntry.FriendlyName = group.Title;
-                rowEntry.Unit = group.Unit;
-            }
-
-            if (!recordData.TryGetValue(rowEntry.Name, out var data))
-            {
-                data = new();
-
-                recordData[rowEntry.Name] = data;
-            }
-
-            data.RowEntry = rowEntry;
-            data.RecordThrottle = group.RecordThrottle;
+            initOptionRunning.Release();
         }
-
-        await efContext.SaveChangesAsync();
-
-        if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} InitOption End", nameof(DatabaseManager));
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -180,7 +195,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
     private void DealWithDb()
     {
-        _ = Task.Run(async () =>
+        dealWithDbTask = Task.Run(async () =>
         {
             var swCleanup = Stopwatch.StartNew();
             using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
@@ -227,7 +242,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
 
     private void SubscriberReader()
     {
-        _ = Task.Run(async () =>
+        espEventTask = Task.Run(async () =>
         {
             while (!eventSubscriberCT.Token.IsCancellationRequested)
             {
@@ -249,7 +264,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
             }
         }, eventSubscriberCT.Token);
 
-        _ = Task.Run(async () =>
+        exceptionTask = Task.Run(async () =>
         {
             while (!eventSubscriberCT.Token.IsCancellationRequested)
             {
@@ -357,7 +372,7 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
         });
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {
@@ -369,6 +384,13 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IDispo
         eventSubscriberCT?.Cancel();
         eventSubscriberEspEvent?.Dispose();
         eventSubscriberException?.Dispose();
+
+        await Task.WhenAll(
+               dealWithDbTask ?? Task.CompletedTask,
+               espEventTask ?? Task.CompletedTask,
+               exceptionTask ?? Task.CompletedTask
+           );
+
         _espHomeData.OnEspHomeOptionChanged -= OnEspHomeOptionChanged;
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} Dispose End", nameof(DatabaseManager));
