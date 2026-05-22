@@ -13,6 +13,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -357,10 +358,12 @@ public sealed class DatabaseManager : IHostedService, IChannelSubscriber, IAsync
         string data = string.Empty;
         if (e.Data?.Count > 0)
         {
+            var sb = new StringBuilder();
             foreach (DictionaryEntry d in e.Data)
             {
-                data += $"{d.Key}:{d.Value} ";
+                sb.Append($"{d.Key}:{d.Value} ");
             }
+            data = sb.ToString();
         }
 
         record.Enqueue(new Error()
