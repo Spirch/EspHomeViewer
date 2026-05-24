@@ -2,7 +2,7 @@
 using System;
 
 namespace SseLib.Database.Dto;
-public class RecordData
+public sealed class RecordData
 {
     internal long LastRecordUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     
