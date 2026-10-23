@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
+builder.Services.AddEcoWitt();
+
 builder.Services.AddSseManager(builder.Configuration);
 
 builder.Services.AddDatabaseManager(builder.Configuration);
@@ -16,8 +18,6 @@ builder.Services.AddDatabaseManager(builder.Configuration);
 builder.Services.AddGraphServices();
 
 builder.Services.AddBlazorContextMenu();
-
-builder.Services.AddEcoWitt();
 
 builder.Services.AddSignalR(hubOptions =>
 {
