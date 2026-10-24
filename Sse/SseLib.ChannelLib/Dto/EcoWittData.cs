@@ -12,16 +12,13 @@ public sealed class EcoWittData
 {
     private readonly ILogger<EcoWittData> _logger;
     private readonly ConcurrentDictionary<string, string> data = new();
-    private readonly EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> _channelSubscriberDictionnary;
     private readonly EventBroadcaster<IChannelSubscriber, IChannelSubscriber> _channelSubscriberUpdate;
 
-    public EcoWittData(EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> channelSubscriberDictionnary,
-                       EventBroadcaster<IChannelSubscriber, IChannelSubscriber> channelSubscriberUpdate,
+    public EcoWittData(EventBroadcaster<IChannelSubscriber, IChannelSubscriber> channelSubscriberUpdate,
                        ILogger<EcoWittData> logger)
     {
         _logger = logger;
 
-        _channelSubscriberDictionnary = channelSubscriberDictionnary;
         _channelSubscriberUpdate = channelSubscriberUpdate;
     }
 

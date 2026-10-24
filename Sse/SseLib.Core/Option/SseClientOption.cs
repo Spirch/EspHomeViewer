@@ -1,9 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace SseLib.Core.Option;
 
 public sealed class SseClientOption
 {
+    [Required]
+    public List<Uri> Uri { get; set; } = new();
+
     [Range(1,30)]
     public int PingTimeout { get; set; } = 1;
     [Range(1, 30)]

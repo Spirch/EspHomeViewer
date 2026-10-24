@@ -36,7 +36,7 @@ public sealed class SseClientManager : IHostedService, IAsyncDisposable
 
         try
         {
-            var newUris = _espHomeData.EsphomeOptions.Uri;
+            var newUris = _espHomeData.EsphomeOptions.SseClient.Uri;
             var currentUris = _sseClients.Keys;
 
             foreach (var uri in newUris.Except(currentUris))
@@ -61,7 +61,7 @@ public sealed class SseClientManager : IHostedService, IAsyncDisposable
     {
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync Start", nameof(SseClientManager));
 
-        await InitializeClientsAsync(_espHomeData.EsphomeOptions.Uri);
+        await InitializeClientsAsync(_espHomeData.EsphomeOptions.SseClient.Uri);
 
         if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("{Class} StartAsync End", nameof(SseClientManager));
     }

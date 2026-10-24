@@ -6,8 +6,6 @@ namespace SseLib.Core.Option;
 
 public sealed class EsphomeOptions
 {
-    [Required]
-    public List<Uri> Uri { get; set; } = new();
     public SseClientOption SseClient { get; set; } = new();
     public List<DeviceInfoOption> DeviceInfo { get; set; } = new();
     public List<StatusInfoOption> StatusInfo { get; set; } = new();
