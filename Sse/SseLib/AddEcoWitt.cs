@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using SseLib.Api;
 using SseLib.Api.Helper;
 using SseLib.ChannelLib;
+using SseLib.ChannelLib.Dto;
 using SseLib.Core.Dto;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ public static class AddEcoWittLib
     {
         services.AddSingleton<EventBroadcaster<string, EcoWittSse>>();
         services.AddSingleton<EventBroadcaster<IChannelSubscriber, Dictionary<string, string>>>();
+        services.AddSingleton<EcoWittData>();
 
         return services;
     }

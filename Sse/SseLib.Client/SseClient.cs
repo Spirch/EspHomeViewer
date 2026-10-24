@@ -19,7 +19,7 @@ public sealed class SseClient : IAsyncDisposable
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EspHomeData _espHomeData;
-    private readonly EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> _channelSubscriberEcoWitt;
+    private readonly EcoWittData _ecoWittData;
     private readonly EventBroadcaster<IChannelSubscriber, Exception> _channelSubscriberException;
     private readonly ILogger<SseClient> _logger;
 
@@ -36,17 +36,17 @@ public sealed class SseClient : IAsyncDisposable
 
     public SseClient(IHttpClientFactory httpClientFactory,
                      EspHomeData espHomeData,
-                     EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> channelSubscriberEcoWitt,
+                     EcoWittData ecoWittData,
                      EventBroadcaster<IChannelSubscriber, Exception> channelSubscriberException,
                      ILogger<SseClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _espHomeData = espHomeData;
+        _ecoWittData = ecoWittData;
 
         _espHomeData.OnEspHomeOptionChanged += OnEspHomeOptionChanged;
 
-        _channelSubscriberEcoWitt = channelSubscriberEcoWitt;
         _channelSubscriberException = channelSubscriberException;
     }
 
@@ -192,7 +192,7 @@ public sealed class SseClient : IAsyncDisposable
 
                     var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(item.Data);
 
-                    _channelSubscriberEcoWitt.Broadcast(dict);
+                    _ecoWittData.UpdateData(dict);
                 }
             }
         }

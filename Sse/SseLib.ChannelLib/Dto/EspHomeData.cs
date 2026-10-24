@@ -31,12 +31,12 @@ public sealed class EspHomeData : IDisposable
     private volatile EspHomeSnapshot _snapshot;
 
     public EspHomeData(IOptionsMonitor<EsphomeOptions> options,
-                       EventBroadcaster<IChannelSubscriber, EspEvent> channelSubscriber,
+                       EventBroadcaster<IChannelSubscriber, EspEvent> channelSubscriberEspEvent,
                        EventBroadcaster<IChannelSubscriber, IChannelSubscriber> channelSubscriberUpdate,
                        ILogger<EspHomeData> logger)
     {
         _logger = logger;
-        _channelSubscriberEspEvent = channelSubscriber;
+        _channelSubscriberEspEvent = channelSubscriberEspEvent;
         _channelSubscriberUpdate = channelSubscriberUpdate;
 
         RefreshFrozenDictionary(options.CurrentValue);

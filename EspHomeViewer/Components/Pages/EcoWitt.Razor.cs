@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SseLib.ChannelLib;
+using SseLib.ChannelLib.Dto;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -17,16 +18,17 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
     private ILogger<EcoWitt> Logger { get; set; }
 
     [Inject]
-    private EventBroadcaster<IChannelSubscriber, Dictionary<string, string>> ChannelSubscriber { get; set; }
+    private EcoWittData EcoWittData { get; set; }
+
+    [Inject]
+    private EventBroadcaster<IChannelSubscriber, IChannelSubscriber> ChannelSubscriber { get; set; }
 
     [Inject]
     IJSRuntime JS { get; set; }
 
-    public string ChannelNameId => nameof(EcoWitt);
+    public string ChannelNameId => nameof(EcoWittData);
 
-    private readonly ConcurrentDictionary<string, string> weatherData = new();
-
-    private EventSubscriber<Dictionary<string, string>> eventSubscriber;
+    private EventSubscriber<IChannelSubscriber> eventSubscriber;
     private CancellationTokenSource weatherDataCT;
 
     protected override void OnParametersSet()
@@ -50,11 +52,6 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
                 {
                     await foreach (var message in eventSubscriber.Reader.ReadAllAsync(weatherDataCT.Token))
                     {
-                        foreach (var d in message)
-                        {
-                            weatherData[d.Key] = d.Value;
-                        }
-
                         await InvokeAsync(StateHasChanged);
                     }
                 }
@@ -79,7 +76,7 @@ public partial class EcoWitt : IChannelSubscriber, IDisposable
 
     private string TryReadWeatherData(string key)
     {
-        if (weatherData.TryGetValue(key, out var value))
+        if (EcoWittData.TryGetData(key, out var value))
         {
             return value;
         }
